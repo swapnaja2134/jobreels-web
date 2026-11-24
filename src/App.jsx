@@ -307,7 +307,6 @@ const CURATED_JOBS = [
 ];
 
 export default function App() {
-  // Default to "reels" so first screen opens on an impressive workplace reel
   const [activeTab, setActiveTab] = useState("reels");
   const [lang, setLang] = useState("EN");
   const [lightMode, setLightMode] = useState(true);
@@ -345,13 +344,13 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [posting, setPosting] = useState(false);
 
-  // Hidden Admin State (Accessible via double-tap on JR logo)
+  // Hidden Admin State (Double-tap JR logo to access)
   const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  // Populated Candidate Profile & Resume Builder State (Synced across Profile & Resume)
+  // Candidate Profile & Resume Builder State (Synced across Profile & Resume)
   const [resumeData, setResumeData] = useState({
     fullName: "Aarav Deshmukh",
     role: "Android & Full Stack Java Developer",
@@ -395,7 +394,6 @@ export default function App() {
       if (jobsRes.ok) {
         const apiJobs = await jobsRes.json();
         if (Array.isArray(apiJobs) && apiJobs.length > 0) {
-          // Merge live API jobs with curated jobs so all filter categories stay rich
           const apiTitles = new Set(apiJobs.map((j) => (j.title || "").toLowerCase()));
           const extraCurated = CURATED_JOBS.filter(
             (cj) => !apiTitles.has(cj.title.toLowerCase())
@@ -737,7 +735,7 @@ export default function App() {
       {/* MOBILE APP SHELL */}
       <div className={`min-h-screen flex justify-center ${bgMain} transition-colors duration-200 font-sans print:hidden`}>
         <div className={`w-full max-w-md min-h-screen flex flex-col border-x ${shellBg} relative pb-24 shadow-xl`}>
-          {/* BOTTOM-FLOATING TOAST (NEVER COVERS HEADER OR LOGOUT BUTTON) */}
+          {/* BOTTOM-FLOATING TOAST */}
           {toast && (
             <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-sm pointer-events-none">
               <div className="bg-slate-900/95 backdrop-blur-md text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-700">
@@ -747,7 +745,7 @@ export default function App() {
             </div>
           )}
 
-          {/* TOP APP BAR (CLEAN, NO "PRO" BADGE) */}
+          {/* TOP APP BAR */}
           <header
             className={`sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between ${
               lightMode ? "bg-white/95 border-slate-200/80" : "bg-[#0F172A]/95 border-slate-800"
@@ -809,7 +807,7 @@ export default function App() {
 
           {/* MAIN CONTENT AREA */}
           <main className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {/* 1. FIRST SCREEN: WORKPLACE REELS WITH REAL LOOPING VIDEO & THUMBNAILS */}
+            {/* 1. WORKPLACE REELS TAB (DEFAULT LANDING SCREEN) */}
             {activeTab === "reels" && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -835,7 +833,6 @@ export default function App() {
 
                   return (
                     <div key={reel.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
-                      {/* Real Video / Workplace Thumbnail Container */}
                       <div
                         onClick={() => setPlayingReelId(isPlaying ? null : reel.id)}
                         className="relative h-64 w-full bg-slate-900 overflow-hidden cursor-pointer group"
@@ -858,7 +855,6 @@ export default function App() {
                           />
                         )}
 
-                        {/* Gradient Overlay for Crisp Readability */}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-slate-950/40 flex flex-col justify-between p-4">
                           <div className="flex items-center justify-between">
                             <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/50 text-white backdrop-blur-md border border-white/15 flex items-center gap-1.5">
@@ -889,7 +885,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Reel Action Bar */}
                       <div className="p-3.5 flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[11px] flex items-center justify-center shrink-0">
@@ -929,7 +924,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 2. JOBS DISCOVERY TAB (9+ ROLES ACROSS ALL FILTER CHIPS) */}
+            {/* 2. JOBS DISCOVERY TAB */}
             {activeTab === "jobs" && (
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
@@ -1354,20 +1349,12 @@ export default function App() {
               </form>
             )}
 
-            {/* 4. RESUME BUILDER TAB (SYNCS DIRECTLY WITH PROFILE) */}
+            {/* 4. RESUME BUILDER TAB (BOTTOM DOWNLOAD BUTTON ONLY) */}
             {activeTab === "resume" && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight">Instant Resume Builder</h2>
-                    <p className={`text-xs ${mutedText}`}>Syncs to My Profile & exports formatted PDF</p>
-                  </div>
-                  <button
-                    onClick={handleDownloadResumePDF}
-                    className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download PDF
-                  </button>
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">Instant Resume Builder</h2>
+                  <p className={`text-xs ${mutedText}`}>Syncs to My Profile & exports formatted PDF</p>
                 </div>
 
                 {/* Live Resume Template Preview Card */}
@@ -1543,7 +1530,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 5. MY PROFILE TAB (POPULATED PHOTO & NAME + RESUME UPLOAD + APPLIED JOBS TRACKER) */}
+            {/* 5. MY PROFILE TAB */}
             {activeTab === "profile" && (
               <div className="space-y-4">
                 <div>
@@ -1551,7 +1538,7 @@ export default function App() {
                   <p className={`text-xs mt-0.5 ${mutedText}`}>{t.myProfileSub}</p>
                 </div>
 
-                {/* Candidate Identity Card with Real Photo & Synced Resume Info */}
+                {/* Candidate Identity Card with Photo & Synced Resume Info */}
                 <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${cardBg}`}>
                   <div className="flex items-center gap-3 min-w-0">
                     <img
@@ -2029,7 +2016,7 @@ export default function App() {
             </div>
           )}
 
-          {/* BOTTOM NAVIGATION BAR (5 CLEAN CANDIDATE/EMPLOYER TABS — ADMIN HIDDEN) */}
+          {/* BOTTOM NAVIGATION BAR */}
           <nav
             className={`fixed bottom-0 w-full max-w-md border-t px-2 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
               lightMode ? "bg-white/95 border-slate-200/90" : "bg-[#0F172A]/95 border-slate-800"
