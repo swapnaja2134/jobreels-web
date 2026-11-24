@@ -26,9 +26,10 @@ import {
   Trash2,
   SlidersHorizontal,
   Sparkles,
-  Award,
   Phone,
+  Mail,
   ChevronRight,
+  RotateCcw,
 } from "lucide-react";
 
 const API_BASE = "https://jobreels-backend.onrender.com";
@@ -41,14 +42,14 @@ const TRANSLATIONS = {
     resume: "Resume",
     admin: "Admin",
     verifiedJobs: "Explore Opportunities",
-    searchPlaceholder: "Search job title, company, or location...",
+    searchPlaceholder: "Search job title, company, skills, or city...",
     oneTapApply: "One-Tap Apply",
     applied: "Applied",
     postTitle: "Post a New Job",
     postSub: "Publish verified openings directly to the candidate feed.",
     selectRole: "Job Role",
     customRolePlaceholder: "Enter custom job title...",
-    companyPlaceholder: "Company / Organization Name",
+    companyPlaceholder: "e.g., Skyline Properties Pvt Ltd",
     remoteLabel: "Remote Work Option",
     publishBtn: "Publish Job Listing",
     adminLoginTitle: "Admin Portal",
@@ -62,14 +63,14 @@ const TRANSLATIONS = {
     resume: "बायोडाटा",
     admin: "एडमिन",
     verifiedJobs: "सत्यापित नौकरियां",
-    searchPlaceholder: "पद, कंपनी या शहर खोजें...",
+    searchPlaceholder: "पद, कंपनी, कौशल या शहर खोजें...",
     oneTapApply: "एक-टैप आवेदन",
     applied: "आवेदित",
     postTitle: "नई नौकरी पोस्ट करें",
     postSub: "उम्मीदवारों के लिए सत्यापित नौकरी प्रकाशित करें।",
     selectRole: "जॉब रोल चुनें",
     customRolePlaceholder: "कस्टम जॉब टाइटल लिखें...",
-    companyPlaceholder: "कंपनी का नाम",
+    companyPlaceholder: "कंपनी का नाम दर्ज करें",
     remoteLabel: "रिमोट (वर्क फ्रॉम होम)",
     publishBtn: "नौकरी प्रकाशित करें",
     adminLoginTitle: "एडमिन पोर्टल",
@@ -83,14 +84,14 @@ const TRANSLATIONS = {
     resume: "बायोडाटा",
     admin: "अॅडमिन",
     verifiedJobs: "सत्यापित नोकऱ्या",
-    searchPlaceholder: "पद, कंपनी किंवा ठिकाण शोधा...",
+    searchPlaceholder: "पद, कंपनी, कौशल्य किंवा शहर शोधा...",
     oneTapApply: "वन-टॅप अर्ज",
     applied: "अर्ज केला",
     postTitle: "नवीन नोकरी पोस्ट करा",
     postSub: "उमेदवारांसाठी सत्यापित नोकरी प्रकाशित करा.",
     selectRole: "जॉब रोल निवडा",
     customRolePlaceholder: "कस्टम जॉब नाव लिहा...",
-    companyPlaceholder: "कंपनीचे नाव",
+    companyPlaceholder: "कंपनीचे नाव टाका",
     remoteLabel: "रिमोट (घरून काम)",
     publishBtn: "नोकरी प्रकाशित करा",
     adminLoginTitle: "अॅडमिन पोर्टल",
@@ -110,7 +111,7 @@ const ROLE_PRESETS = [
   "Other",
 ];
 
-const FILTER_CHIPS = ["All", "Remote", "IT & Software", "Real Estate", "Engineering"];
+const QUICK_CHIPS = ["All", "Remote", "IT & Software", "Real Estate", "Engineering"];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("jobs");
@@ -129,16 +130,20 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
 
-  // Search & Filter State
+  // Enhanced Search & Multi-Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [showFilters, setShowFilters] = useState(false);
+  const [workModeFilter, setWorkModeFilter] = useState("All"); // All | Remote | On-Site
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [experienceFilter, setExperienceFilter] = useState("All"); // All | Fresher | Experienced
+  const [onlySavedFilter, setOnlySavedFilter] = useState(false);
 
   // Job Post State
   const [selectedRole, setSelectedRole] = useState(ROLE_PRESETS[0]);
   const [customRole, setCustomRole] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [location, setLocation] = useState("Baner, Pune");
-  const [salary, setSalary] = useState("₹3.5 LPA");
+  const [location, setLocation] = useState("");
+  const [salary, setSalary] = useState("");
   const [isRemote, setIsRemote] = useState(false);
   const [category, setCategory] = useState("IT & Software");
   const [experience, setExperience] = useState("Fresher");
@@ -150,18 +155,20 @@ export default function App() {
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
 
-  // Resume Builder State
+  // Empty Resume Builder State (Placeholders Only)
   const [resumeData, setResumeData] = useState({
-    fullName: "Swapnaja Khemkar",
-    role: "Android & Full Stack Java Developer",
-    phone: "+91 98765 43210",
-    location: "Pune, Maharashtra",
-    skills: "Java, Android SDK, XML, Retrofit, Spring Boot, MySQL, React",
-    education: "B.E. Electrical Engineering • SPPU (2026)",
+    fullName: "",
+    role: "",
+    email: "",
+    phone: "",
+    location: "",
+    summary: "",
+    skills: "",
+    experienceOrProjects: "",
+    education: "",
   });
 
   const [muted, setMuted] = useState(true);
-
   const t = TRANSLATIONS[lang];
 
   const showToast = (msg) => {
@@ -180,12 +187,8 @@ export default function App() {
         fetch(`${API_BASE}/api/jobs`),
         fetch(`${API_BASE}/api/reels`),
       ]);
-      if (jobsRes.ok) {
-        setJobs(await jobsRes.json());
-      }
-      if (reelsRes.ok) {
-        setReels(await reelsRes.json());
-      }
+      if (jobsRes.ok) setJobs(await jobsRes.json());
+      if (reelsRes.ok) setReels(await reelsRes.json());
     } catch (err) {
       console.error("API fetch error:", err);
     } finally {
@@ -208,13 +211,14 @@ export default function App() {
     if (e) e.stopPropagation();
     if (appliedIds.includes(job.id)) return;
 
+    const applicantName = resumeData.fullName.trim() || "Verified Candidate";
     setAppliedIds((prev) => [...prev, job.id]);
     const newApp = {
       id: Date.now(),
       jobId: job.id,
       jobTitle: job.title,
       companyName: job.companyName,
-      candidateName: resumeData.fullName,
+      candidateName: applicantName,
       appliedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
     setApplications((prev) => [newApp, ...prev]);
@@ -227,7 +231,7 @@ export default function App() {
         body: JSON.stringify({
           jobId: job.id,
           candidateId: 1,
-          candidateName: resumeData.fullName,
+          candidateName: applicantName,
           jobTitle: job.title,
           status: "APPLIED",
         }),
@@ -243,7 +247,8 @@ export default function App() {
     if (!finalTitle || !companyName.trim()) return;
 
     setPosting(true);
-    const finalLocation = isRemote ? `${location} (Remote)` : location;
+    const baseLocation = location.trim() || "Pune, Maharashtra";
+    const finalLocation = isRemote ? `${baseLocation} (Remote)` : baseLocation;
 
     const payload = {
       title: finalTitle,
@@ -254,7 +259,7 @@ export default function App() {
       experience,
       description:
         description.trim() ||
-        `${isRemote ? "Remote role. " : ""}Hiring a motivated ${finalTitle} to join ${companyName.trim()} and drive daily deliverables.`,
+        `${isRemote ? "Remote opportunity. " : ""}Hiring a dedicated ${finalTitle} to join ${companyName.trim()} and drive daily operations.`,
       shiftTiming: isRemote ? "Flexible / Remote" : "10:00 AM - 7:00 PM",
       openings: 2,
       verified: true,
@@ -271,6 +276,8 @@ export default function App() {
         setJobs((prev) => [created, ...prev]);
         setCompanyName("");
         setCustomRole("");
+        setLocation("");
+        setSalary("");
         setDescription("");
         showToast("New job published live!");
         setActiveTab("jobs");
@@ -304,27 +311,62 @@ export default function App() {
     }
   };
 
-  const toggleLikeReel = (id) => {
-    setLikedReels((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleDownloadResumePDF = () => {
+    if (!resumeData.fullName.trim()) {
+      showToast("Please enter your Full Name before downloading PDF");
+      return;
+    }
+    window.print();
   };
 
+  const resetAllFilters = () => {
+    setSearchQuery("");
+    setWorkModeFilter("All");
+    setCategoryFilter("All");
+    setExperienceFilter("All");
+    setOnlySavedFilter(false);
+  };
+
+  const activeFilterCount =
+    (workModeFilter !== "All" ? 1 : 0) +
+    (categoryFilter !== "All" ? 1 : 0) +
+    (experienceFilter !== "All" ? 1 : 0) +
+    (onlySavedFilter ? 1 : 0);
+
   const filteredJobs = jobs.filter((job) => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
+      !q ||
       (job.title || "").toLowerCase().includes(q) ||
       (job.companyName || "").toLowerCase().includes(q) ||
       (job.location || "").toLowerCase().includes(q) ||
+      (job.category || "").toLowerCase().includes(q) ||
       (job.description || "").toLowerCase().includes(q);
 
     if (!matchesSearch) return false;
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Remote") {
-      return (job.location || "").toLowerCase().includes("remote");
+
+    const isJobRemote = (job.location || "").toLowerCase().includes("remote");
+    if (workModeFilter === "Remote" && !isJobRemote) return false;
+    if (workModeFilter === "On-Site" && isJobRemote) return false;
+
+    if (categoryFilter !== "All") {
+      const catText = `${job.category || ""} ${job.title || ""}`.toLowerCase();
+      if (!catText.includes(categoryFilter.toLowerCase())) return false;
     }
-    return (
-      (job.category || "").toLowerCase().includes(activeFilter.toLowerCase()) ||
-      (job.title || "").toLowerCase().includes(activeFilter.toLowerCase())
-    );
+
+    if (experienceFilter !== "All") {
+      const expText = `${job.experience || ""} ${job.title || ""}`.toLowerCase();
+      if (experienceFilter === "Fresher" && !expText.includes("fresher") && !expText.includes("junior") && !expText.includes("0-1")) {
+        return false;
+      }
+      if (experienceFilter === "Experienced" && expText.includes("fresher")) {
+        return false;
+      }
+    }
+
+    if (onlySavedFilter && !savedIds.includes(job.id)) return false;
+
+    return true;
   });
 
   const getInitials = (name) => {
@@ -336,6 +378,11 @@ export default function App() {
       .join("")
       .toUpperCase();
   };
+
+  const skillTags = resumeData.skills
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   // Theme tokens
   const bgMain = lightMode ? "bg-[#F4F6FA] text-slate-900" : "bg-[#090D16] text-slate-100";
@@ -352,804 +399,1080 @@ export default function App() {
     : "bg-[#0F172A] text-slate-300 border-slate-700";
 
   return (
-    <div className={`min-h-screen flex justify-center ${bgMain} transition-colors duration-200 font-sans`}>
-      <div className={`w-full max-w-md min-h-screen flex flex-col border-x ${shellBg} relative pb-24 shadow-xl`}>
-        {/* TOAST NOTIFICATION */}
-        {toast && (
-          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
-            <div className="bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 border border-slate-700">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{toast}</span>
-            </div>
+    <>
+      {/* PRINT-ONLY FULL EXECUTIVE RESUME TEMPLATE */}
+      <div className="hidden print:block bg-white text-slate-900 p-8 max-w-2xl mx-auto font-sans">
+        <div className="border-b-2 border-indigo-600 pb-4 mb-5">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 uppercase">
+            {resumeData.fullName || "Candidate Name"}
+          </h1>
+          <p className="text-sm font-semibold text-indigo-600 mt-0.5">
+            {resumeData.role || "Target Job Role"}
+          </p>
+          <div className="flex flex-wrap gap-4 text-xs text-slate-600 mt-2">
+            {resumeData.phone && <span>Phone: {resumeData.phone}</span>}
+            {resumeData.email && <span>Email: {resumeData.email}</span>}
+            {resumeData.location && <span>Location: {resumeData.location}</span>}
           </div>
-        )}
+        </div>
 
-        {/* TOP APP BAR */}
-        <header
-          className={`sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between ${
-            lightMode ? "bg-white/95 border-slate-200/80" : "bg-[#0F172A]/95 border-slate-800"
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-extrabold text-sm flex items-center justify-center shadow-sm">
-              JR
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-bold text-base tracking-tight leading-none">JobReels</h1>
-                <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  Pro
-                </span>
-              </div>
-              <p className={`text-[11px] font-medium mt-0.5 flex items-center gap-1 ${mutedText}`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Verified Hiring • Pune
-              </p>
-            </div>
+        <div className="space-y-4 text-xs leading-relaxed">
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-700 border-b border-slate-200 pb-1 mb-1.5">
+              Professional Summary
+            </h2>
+            <p className="text-slate-700">
+              {resumeData.summary.trim() ||
+                `Results-driven ${resumeData.role || "professional"} with strong problem-solving abilities, hands-on execution skills, and a commitment to delivering high-quality work in fast-paced environments.`}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setLightMode(!lightMode)}
-              aria-label="Toggle Theme"
-              className={`p-2 rounded-xl border transition ${
-                lightMode
-                  ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                  : "bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700"
-              }`}
-            >
-              {lightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </button>
-
-            <div
-              className={`flex items-center rounded-xl p-0.5 border text-xs font-semibold ${
-                lightMode ? "bg-slate-50 border-slate-200" : "bg-slate-800 border-slate-700"
-              }`}
-            >
-              <Globe className={`w-3.5 h-3.5 mx-1.5 ${mutedText}`} />
-              {["EN", "HI", "MR"].map((code) => (
-                <button
-                  key={code}
-                  onClick={() => setLang(code)}
-                  className={`px-2 py-1 rounded-lg transition ${
-                    lang === code
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : lightMode
-                      ? "text-slate-600 hover:text-slate-900"
-                      : "text-slate-300 hover:text-white"
-                  }`}
-                >
-                  {code === "EN" ? "EN" : code === "HI" ? "हिं" : "मरा"}
-                </button>
-              ))}
-            </div>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-700 border-b border-slate-200 pb-1 mb-1.5">
+              Core Skills & Competencies
+            </h2>
+            <p className="text-slate-800 font-medium">
+              {resumeData.skills.trim() || "Communication, Operations, Team Collaboration, MS Office"}
+            </p>
           </div>
-        </header>
 
-        {/* MAIN CONTENT AREA */}
-        <main className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {/* 1. JOBS DISCOVERY TAB */}
-          {activeTab === "jobs" && (
-            <div className="space-y-3.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight">{t.verifiedJobs}</h2>
-                  <p className={`text-xs ${mutedText}`}>
-                    {filteredJobs.length} active openings curated for you
-                  </p>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                  Direct HR
-                </span>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-700 border-b border-slate-200 pb-1 mb-1.5">
+              Experience & Key Projects
+            </h2>
+            <p className="text-slate-700 whitespace-pre-line">
+              {resumeData.experienceOrProjects.trim() ||
+                "• Delivered end-to-end tasks with high accuracy and adherence to timelines.\n• Collaborated across cross-functional teams to improve workflow efficiency."}
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-700 border-b border-slate-200 pb-1 mb-1.5">
+              Education & Qualifications
+            </h2>
+            <p className="text-slate-800 font-medium">
+              {resumeData.education.trim() || "Bachelor's Degree / Diploma"}
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200 text-[11px] text-slate-500">
+            Declaration: I hereby declare that the information furnished above is true and correct to the best of my knowledge.
+          </div>
+        </div>
+      </div>
+
+      {/* MOBILE APP SHELL (HIDDEN WHEN PRINTING PDF) */}
+      <div className={`min-h-screen flex justify-center ${bgMain} transition-colors duration-200 font-sans print:hidden`}>
+        <div className={`w-full max-w-md min-h-screen flex flex-col border-x ${shellBg} relative pb-24 shadow-xl`}>
+          {/* TOAST NOTIFICATION */}
+          {toast && (
+            <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
+              <div className="bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 border border-slate-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{toast}</span>
               </div>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className={`w-4 h-4 absolute left-3.5 top-3.5 ${mutedText}`} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  className={`w-full pl-10 pr-14 py-2.5 rounded-2xl border text-sm outline-none transition shadow-2xs ${inputBg}`}
-                />
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3.5 top-3 text-xs text-indigo-600 font-semibold"
-                  >
-                    Clear
-                  </button>
-                ) : (
-                  <SlidersHorizontal className={`w-4 h-4 absolute right-3.5 top-3.5 ${mutedText}`} />
-                )}
-              </div>
-
-              {/* Quick Filter Pills */}
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {FILTER_CHIPS.map((chip) => {
-                  const isSelected = activeFilter === chip;
-                  return (
-                    <button
-                      key={chip}
-                      onClick={() => setActiveFilter(chip)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition ${
-                        isSelected
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                          : lightMode
-                          ? "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                          : "bg-slate-800 text-slate-300 border-slate-700"
-                      }`}
-                    >
-                      {chip}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Job Cards Feed */}
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2].map((n) => (
-                    <div key={n} className={`p-4 rounded-2xl border animate-pulse space-y-3 ${cardBg}`}>
-                      <div className="h-4 bg-slate-200 rounded w-2/3" />
-                      <div className="h-3 bg-slate-200 rounded w-1/3" />
-                      <div className="h-10 bg-slate-200 rounded w-full" />
-                    </div>
-                  ))}
-                </div>
-              ) : filteredJobs.length === 0 ? (
-                <div className={`text-center py-12 rounded-2xl border ${cardBg}`}>
-                  <p className="font-bold text-sm">No matching roles found</p>
-                  <p className={`text-xs mt-1 ${mutedText}`}>
-                    Try clearing filters or searching a different keyword
-                  </p>
-                </div>
-              ) : (
-                filteredJobs.map((job) => {
-                  const isApplied = appliedIds.includes(job.id);
-                  const isSaved = savedIds.includes(job.id);
-                  const remoteJob = (job.location || "").toLowerCase().includes("remote");
-
-                  return (
-                    <div
-                      key={job.id}
-                      onClick={() => setSelectedJob(job)}
-                      className={`p-4 rounded-2xl border space-y-3 transition active:scale-[0.99] cursor-pointer ${cardBg}`}
-                    >
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-xs flex items-center justify-center shrink-0">
-                            {getInitials(job.companyName)}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-[15px] leading-snug">{job.title}</h3>
-                            <p className={`text-xs font-medium mt-0.5 ${mutedText}`}>
-                              {job.companyName}
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={(e) => toggleSaveJob(e, job.id)}
-                          aria-label="Save Job"
-                          className={`p-2 rounded-xl border transition ${
-                            isSaved
-                              ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                              : lightMode
-                              ? "bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-700"
-                              : "bg-slate-800 border-slate-700 text-slate-400"
-                          }`}
-                        >
-                          <Bookmark className={`w-4 h-4 ${isSaved ? "fill-indigo-600" : ""}`} />
-                        </button>
-                      </div>
-
-                      <p className={`text-xs leading-relaxed line-clamp-2 ${mutedText}`}>
-                        {job.description}
-                      </p>
-
-                      <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${badgeBg}`}>
-                          <MapPin className="w-3 h-3 text-indigo-600" />
-                          {job.location}
-                        </span>
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-semibold">
-                          {job.salary}
-                        </span>
-                        {remoteJob && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
-                            <Wifi className="w-3 h-3" /> Remote
-                          </span>
-                        )}
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${badgeBg}`}>
-                          <Clock className="w-3 h-3" />
-                          {job.shiftTiming || "10:00 AM - 7:00 PM"}
-                        </span>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Verified • {job.openings || 2} Openings
-                        </span>
-                        <button
-                          onClick={(e) => handleApply(e, job)}
-                          disabled={isApplied}
-                          className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
-                            isApplied
-                              ? "bg-emerald-600 text-white"
-                              : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-                          }`}
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          {isApplied ? t.applied : t.oneTapApply}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
             </div>
           )}
 
-          {/* 2. JOB POST TAB */}
-          {activeTab === "post" && (
-            <form onSubmit={handlePublishJob} className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold tracking-tight">{t.postTitle}</h2>
-                <p className={`text-xs mt-0.5 ${mutedText}`}>{t.postSub}</p>
+          {/* TOP APP BAR */}
+          <header
+            className={`sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between ${
+              lightMode ? "bg-white/95 border-slate-200/80" : "bg-[#0F172A]/95 border-slate-800"
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-extrabold text-sm flex items-center justify-center shadow-sm">
+                JR
               </div>
-
-              <div className={`p-4 rounded-2xl border space-y-3.5 ${cardBg}`}>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">{t.selectRole}</label>
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
-                  >
-                    {ROLE_PRESETS.map((role) => (
-                      <option key={role} value={role}>
-                        {role === "Other" ? "Other (Custom Role)" : role}
-                      </option>
-                    ))}
-                  </select>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="font-bold text-base tracking-tight leading-none">JobReels</h1>
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Pro
+                  </span>
                 </div>
+                <p className={`text-[11px] font-medium mt-0.5 flex items-center gap-1 ${mutedText}`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Verified Hiring • Pune
+                </p>
+              </div>
+            </div>
 
-                {selectedRole === "Other" && (
-                  <input
-                    type="text"
-                    required
-                    value={customRole}
-                    onChange={(e) => setCustomRole(e.target.value)}
-                    placeholder={t.customRolePlaceholder}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
-                  />
-                )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLightMode(!lightMode)}
+                aria-label="Toggle Theme"
+                className={`p-2 rounded-xl border transition ${
+                  lightMode
+                    ? "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    : "bg-slate-800 border-slate-700 text-amber-400 hover:bg-slate-700"
+                }`}
+              >
+                {lightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </button>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold">Company Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder={t.companyPlaceholder}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
-                  />
-                </div>
-
-                {/* Remote Toggle Row */}
-                <div
-                  className={`p-3 rounded-xl border flex items-center justify-between ${
-                    lightMode ? "bg-slate-50 border-slate-200" : "bg-slate-800/60 border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                      <Wifi className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold">{t.remoteLabel}</p>
-                      <p className={`text-[11px] ${mutedText}`}>
-                        {isRemote ? "Enabled • Work From Home" : "Disabled • On-Site Office"}
-                      </p>
-                    </div>
-                  </div>
+              <div
+                className={`flex items-center rounded-xl p-0.5 border text-xs font-semibold ${
+                  lightMode ? "bg-slate-50 border-slate-200" : "bg-slate-800 border-slate-700"
+                }`}
+              >
+                <Globe className={`w-3.5 h-3.5 mx-1.5 ${mutedText}`} />
+                {["EN", "HI", "MR"].map((code) => (
                   <button
-                    type="button"
-                    onClick={() => setIsRemote(!isRemote)}
-                    className={`w-12 h-6 rounded-full p-0.5 transition-colors ${
-                      isRemote ? "bg-indigo-600" : "bg-slate-300"
+                    key={code}
+                    onClick={() => setLang(code)}
+                    className={`px-2 py-1 rounded-lg transition ${
+                      lang === code
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : lightMode
+                        ? "text-slate-600 hover:text-slate-900"
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                        isRemote ? "translate-x-6" : "translate-x-0"
-                      }`}
+                    {code === "EN" ? "EN" : code === "HI" ? "हिं" : "मरा"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1 p-4 space-y-4 overflow-y-auto">
+            {/* 1. ENHANCED JOBS SEARCH & FILTER TAB */}
+            {activeTab === "jobs" && (
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight">{t.verifiedJobs}</h2>
+                    <p className={`text-xs ${mutedText}`}>
+                      Showing {filteredJobs.length} of {jobs.length} verified openings
+                    </p>
+                  </div>
+                  {(activeFilterCount > 0 || searchQuery) && (
+                    <button
+                      onClick={resetAllFilters}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset
+                    </button>
+                  )}
+                </div>
+
+                {/* Search + Filter Toggle Bar */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className={`w-4 h-4 absolute left-3.5 top-3 ${mutedText}`} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t.searchPlaceholder}
+                      className={`w-full pl-10 pr-8 py-2.5 rounded-2xl border text-xs outline-none transition shadow-2xs ${inputBg}`}
                     />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`px-3.5 py-2.5 rounded-2xl border text-xs font-semibold flex items-center gap-1.5 transition shrink-0 ${
+                      showFilters || activeFilterCount > 0
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : lightMode
+                        ? "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                        : "bg-slate-800 text-slate-200 border-slate-700"
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                      <span className="w-4 h-4 rounded-full bg-white text-indigo-600 text-[10px] font-bold flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold">Location</label>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="City / Area"
-                      className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
-                    />
+                {/* Expandable Multi-Criteria Filter Panel */}
+                {showFilters && (
+                  <div className={`p-3.5 rounded-2xl border space-y-3 ${cardBg}`}>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-1">
+                        <label className={`text-[10px] font-bold uppercase ${mutedText}`}>
+                          Work Mode
+                        </label>
+                        <select
+                          value={workModeFilter}
+                          onChange={(e) => setWorkModeFilter(e.target.value)}
+                          className={`w-full px-2.5 py-2 rounded-xl border text-xs outline-none ${inputBg}`}
+                        >
+                          <option value="All">All Modes</option>
+                          <option value="Remote">Remote (WFH)</option>
+                          <option value="On-Site">On-Site Office</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className={`text-[10px] font-bold uppercase ${mutedText}`}>
+                          Department
+                        </label>
+                        <select
+                          value={categoryFilter}
+                          onChange={(e) => setCategoryFilter(e.target.value)}
+                          className={`w-full px-2.5 py-2 rounded-xl border text-xs outline-none ${inputBg}`}
+                        >
+                          <option value="All">All Departments</option>
+                          <option value="IT">IT & Software</option>
+                          <option value="Real Estate">Real Estate & Sales</option>
+                          <option value="Engineering">Engineering & Field</option>
+                          <option value="Operations">Operations & CRM</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex gap-1.5">
+                        {["All", "Fresher", "Experienced"].map((exp) => (
+                          <button
+                            key={exp}
+                            onClick={() => setExperienceFilter(exp)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                              experienceFilter === exp
+                                ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                : badgeBg
+                            }`}
+                          >
+                            {exp}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => setOnlySavedFilter(!onlySavedFilter)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border flex items-center gap-1 transition ${
+                          onlySavedFilter
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : badgeBg
+                        }`}
+                      >
+                        <Bookmark className="w-3 h-3" /> Saved ({savedIds.length})
+                      </button>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold">Compensation</label>
-                    <input
-                      type="text"
-                      value={salary}
-                      onChange={(e) => setSalary(e.target.value)}
-                      placeholder="e.g. ₹3.5 LPA"
-                      className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
-                    />
-                  </div>
+                )}
+
+                {/* Quick Filter Pills */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {QUICK_CHIPS.map((chip) => {
+                    const isSelected =
+                      (chip === "All" && workModeFilter === "All" && categoryFilter === "All") ||
+                      (chip === "Remote" && workModeFilter === "Remote") ||
+                      categoryFilter.toLowerCase() === chip.toLowerCase();
+
+                    return (
+                      <button
+                        key={chip}
+                        onClick={() => {
+                          if (chip === "All") {
+                            setWorkModeFilter("All");
+                            setCategoryFilter("All");
+                          } else if (chip === "Remote") {
+                            setWorkModeFilter(workModeFilter === "Remote" ? "All" : "Remote");
+                          } else {
+                            setCategoryFilter(categoryFilter === chip ? "All" : chip);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition ${
+                          isSelected
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                            : lightMode
+                            ? "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                            : "bg-slate-800 text-slate-300 border-slate-700"
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold">Department</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                {/* Job Cards Feed */}
+                {loading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((n) => (
+                      <div key={n} className={`p-4 rounded-2xl border animate-pulse space-y-3 ${cardBg}`}>
+                        <div className="h-4 bg-slate-200 rounded w-2/3" />
+                        <div className="h-3 bg-slate-200 rounded w-1/3" />
+                        <div className="h-10 bg-slate-200 rounded w-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredJobs.length === 0 ? (
+                  <div className={`text-center py-12 rounded-2xl border ${cardBg}`}>
+                    <p className="font-bold text-sm">No matching roles found</p>
+                    <p className={`text-xs mt-1 ${mutedText}`}>
+                      Try adjusting your search keywords or filter criteria
+                    </p>
+                    <button
+                      onClick={resetAllFilters}
+                      className="mt-3 px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
                     >
-                      <option>IT & Software</option>
-                      <option>Real Estate & Sales</option>
-                      <option>Engineering & Field</option>
-                      <option>Operations & CRM</option>
+                      Clear All Filters
+                    </button>
+                  </div>
+                ) : (
+                  filteredJobs.map((job) => {
+                    const isApplied = appliedIds.includes(job.id);
+                    const isSaved = savedIds.includes(job.id);
+                    const remoteJob = (job.location || "").toLowerCase().includes("remote");
+
+                    return (
+                      <div
+                        key={job.id}
+                        onClick={() => setSelectedJob(job)}
+                        className={`p-4 rounded-2xl border space-y-3 transition active:scale-[0.99] cursor-pointer ${cardBg}`}
+                      >
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-xs flex items-center justify-center shrink-0">
+                              {getInitials(job.companyName)}
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-[15px] leading-snug">{job.title}</h3>
+                              <p className={`text-xs font-medium mt-0.5 ${mutedText}`}>
+                                {job.companyName}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={(e) => toggleSaveJob(e, job.id)}
+                            aria-label="Save Job"
+                            className={`p-2 rounded-xl border transition ${
+                              isSaved
+                                ? "bg-indigo-50 border-indigo-200 text-indigo-600"
+                                : lightMode
+                                ? "bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-700"
+                                : "bg-slate-800 border-slate-700 text-slate-400"
+                            }`}
+                          >
+                            <Bookmark className={`w-4 h-4 ${isSaved ? "fill-indigo-600" : ""}`} />
+                          </button>
+                        </div>
+
+                        <p className={`text-xs leading-relaxed line-clamp-2 ${mutedText}`}>
+                          {job.description}
+                        </p>
+
+                        <div className="flex flex-wrap gap-1.5 text-[11px] font-medium">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${badgeBg}`}>
+                            <MapPin className="w-3 h-3 text-indigo-600" />
+                            {job.location}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-semibold">
+                            {job.salary}
+                          </span>
+                          {remoteJob && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">
+                              <Wifi className="w-3 h-3" /> Remote
+                            </span>
+                          )}
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${badgeBg}`}>
+                            <Clock className="w-3 h-3" />
+                            {job.shiftTiming || "10:00 AM - 7:00 PM"}
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Verified • {job.openings || 2} Openings
+                          </span>
+                          <button
+                            onClick={(e) => handleApply(e, job)}
+                            disabled={isApplied}
+                            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
+                              isApplied
+                                ? "bg-emerald-600 text-white"
+                                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                            }`}
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            {isApplied ? t.applied : t.oneTapApply}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* 2. JOB POST TAB */}
+            {activeTab === "post" && (
+              <form onSubmit={handlePublishJob} className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">{t.postTitle}</h2>
+                  <p className={`text-xs mt-0.5 ${mutedText}`}>{t.postSub}</p>
+                </div>
+
+                <div className={`p-4 rounded-2xl border space-y-3.5 ${cardBg}`}>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold">{t.selectRole}</label>
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                    >
+                      {ROLE_PRESETS.map((role) => (
+                        <option key={role} value={role}>
+                          {role === "Other" ? "Other (Custom Role)" : role}
+                        </option>
+                      ))}
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold">Experience</label>
+
+                  {selectedRole === "Other" && (
                     <input
                       type="text"
-                      value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
-                      placeholder="e.g. Fresher / 1-2 Yrs"
-                      className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                      required
+                      value={customRole}
+                      onChange={(e) => setCustomRole(e.target.value)}
+                      placeholder={t.customRolePlaceholder}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
                     />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold">Role Overview</label>
-                  <textarea
-                    rows={3}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Key responsibilities & required skills..."
-                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={posting}
-                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                {posting ? "Publishing Listing..." : t.publishBtn}
-              </button>
-            </form>
-          )}
-
-          {/* 3. REELS TAB */}
-          {activeTab === "reels" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight">Workplace Reels</h2>
-                  <p className={`text-xs ${mutedText}`}>Short video previews from hiring teams</p>
-                </div>
-                <button
-                  onClick={() => setMuted(!muted)}
-                  className={`p-2 rounded-xl border ${cardBg}`}
-                >
-                  {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {reels.map((reel) => {
-                const isLiked = !!likedReels[reel.id];
-                const likeCount = (reel.likes || 18) + (isLiked ? 1 : 0);
-
-                return (
-                  <div key={reel.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
-                    <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800 p-6 text-white min-h-[240px] flex flex-col justify-between relative">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/15 backdrop-blur-xs">
-                          Company Spotlight
-                        </span>
-                        <span className="text-[11px] text-indigo-200 font-medium">0:30 HD</span>
-                      </div>
-
-                      <div className="my-auto flex justify-center">
-                        <button
-                          onClick={() => showToast("Playing workplace spotlight preview")}
-                          className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
-                        >
-                          <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-                        </button>
-                      </div>
-
-                      <div>
-                        <h3 className="font-bold text-base leading-snug">{reel.title}</h3>
-                        <p className="text-xs text-indigo-200 mt-1">
-                          {reel.creatorName} • {reel.roleTag || "Verified Employer"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[11px] flex items-center justify-center">
-                          {getInitials(reel.creatorName)}
-                        </div>
-                        <span className="font-semibold text-xs">{reel.creatorName}</span>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
-                      </div>
-
-                      <div className="flex items-center gap-2.5">
-                        <button
-                          onClick={() => toggleLikeReel(reel.id)}
-                          className="text-xs font-semibold flex items-center gap-1 text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition"
-                        >
-                          <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`} />
-                          {likeCount}
-                        </button>
-                        <button
-                          onClick={() => showToast("Reel link copied to clipboard")}
-                          className={`p-1.5 rounded-lg border ${badgeBg}`}
-                        >
-                          <Share2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setActiveTab("jobs")}
-                          className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1"
-                        >
-                          Apply <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* 4. RESUME TAB */}
-          {activeTab === "resume" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight">Candidate Profile</h2>
-                  <p className={`text-xs ${mutedText}`}>Attached automatically on One-Tap Apply</p>
-                </div>
-                <button
-                  onClick={() => window.print()}
-                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                >
-                  <Download className="w-3.5 h-3.5" /> Export PDF
-                </button>
-              </div>
-
-              {/* Live Formatted Profile Card */}
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white shadow-md space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-lg">{resumeData.fullName}</h3>
-                    <p className="text-xs text-indigo-100 font-medium">{resumeData.role}</p>
-                  </div>
-                  <Award className="w-7 h-7 text-indigo-200" />
-                </div>
-                <div className="text-[11px] text-indigo-100 flex flex-wrap gap-3 pt-1">
-                  <span className="flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> {resumeData.phone}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {resumeData.location}
-                  </span>
-                </div>
-                <p className="text-[11px] bg-white/15 px-3 py-2 rounded-xl leading-relaxed">
-                  <b>Skills:</b> {resumeData.skills}
-                </p>
-                <p className="text-[11px] text-indigo-100">{resumeData.education}</p>
-              </div>
-
-              {/* Edit Details Card */}
-              <div className={`p-4 rounded-2xl border space-y-3 ${cardBg}`}>
-                <p className="text-xs font-bold">Edit Profile Information</p>
-                <input
-                  type="text"
-                  value={resumeData.fullName}
-                  onChange={(e) => setResumeData({ ...resumeData, fullName: e.target.value })}
-                  className={`w-full px-3.5 py-2 rounded-xl border text-sm font-semibold ${inputBg}`}
-                />
-                <input
-                  type="text"
-                  value={resumeData.role}
-                  onChange={(e) => setResumeData({ ...resumeData, role: e.target.value })}
-                  className={`w-full px-3.5 py-2 rounded-xl border text-xs ${inputBg}`}
-                />
-                <div className="grid grid-cols-2 gap-2.5">
-                  <input
-                    type="text"
-                    value={resumeData.phone}
-                    onChange={(e) => setResumeData({ ...resumeData, phone: e.target.value })}
-                    className={`w-full px-3 py-2 rounded-xl border text-xs ${inputBg}`}
-                  />
-                  <input
-                    type="text"
-                    value={resumeData.location}
-                    onChange={(e) => setResumeData({ ...resumeData, location: e.target.value })}
-                    className={`w-full px-3 py-2 rounded-xl border text-xs ${inputBg}`}
-                  />
-                </div>
-                <textarea
-                  rows={2}
-                  value={resumeData.skills}
-                  onChange={(e) => setResumeData({ ...resumeData, skills: e.target.value })}
-                  className={`w-full px-3.5 py-2 rounded-xl border text-xs ${inputBg}`}
-                />
-                <input
-                  type="text"
-                  value={resumeData.education}
-                  onChange={(e) => setResumeData({ ...resumeData, education: e.target.value })}
-                  className={`w-full px-3.5 py-2 rounded-xl border text-xs ${inputBg}`}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 5. ADMIN TAB WITH PASSWORD LOGIN & LISTING MANAGEMENT */}
-          {activeTab === "admin" && (
-            <div className="space-y-4">
-              {!isAdminAuth ? (
-                <form
-                  onSubmit={handleAdminLogin}
-                  className={`p-6 rounded-2xl border space-y-4 mt-4 ${cardBg}`}
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight">{t.adminLoginTitle}</h2>
-                    <p className={`text-xs mt-1 ${mutedText}`}>{t.adminLoginSub}</p>
-                  </div>
+                  )}
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold">Administrator Password</label>
+                    <label className="text-xs font-semibold">Company Name</label>
                     <input
-                      type="password"
+                      type="text"
                       required
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="••••••••"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder={t.companyPlaceholder}
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
                     />
                   </div>
 
-                  {adminError && (
-                    <p className="text-xs font-semibold text-rose-600">{adminError}</p>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition"
+                  {/* Remote Toggle Row */}
+                  <div
+                    className={`p-3 rounded-xl border flex items-center justify-between ${
+                      lightMode ? "bg-slate-50 border-slate-200" : "bg-slate-800/60 border-slate-700"
+                    }`}
                   >
-                    {t.unlockBtn}
-                  </button>
-                </form>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold tracking-tight">Admin Dashboard</h2>
-                      <p className={`text-xs ${mutedText}`}>Live platform metrics & moderation</p>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <Wifi className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold">{t.remoteLabel}</p>
+                        <p className={`text-[11px] ${mutedText}`}>
+                          {isRemote ? "Enabled • Work From Home" : "Disabled • On-Site Office"}
+                        </p>
+                      </div>
                     </div>
                     <button
-                      onClick={() => setIsAdminAuth(false)}
-                      className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold flex items-center gap-1"
+                      type="button"
+                      onClick={() => setIsRemote(!isRemote)}
+                      className={`w-12 h-6 rounded-full p-0.5 transition-colors ${
+                        isRemote ? "bg-indigo-600" : "bg-slate-300"
+                      }`}
                     >
-                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                      <div
+                        className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                          isRemote ? "translate-x-6" : "translate-x-0"
+                        }`}
+                      />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2.5">
-                    <div className={`p-3.5 rounded-2xl border text-center ${cardBg}`}>
-                      <p className="text-xl font-extrabold text-indigo-600">{jobs.length}</p>
-                      <p className={`text-[11px] font-medium mt-0.5 ${mutedText}`}>Active Jobs</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold">Location</label>
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="e.g., Baner, Pune"
+                        className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                      />
                     </div>
-                    <div className={`p-3.5 rounded-2xl border text-center ${cardBg}`}>
-                      <p className="text-xl font-extrabold text-emerald-600">{reels.length}</p>
-                      <p className={`text-[11px] font-medium mt-0.5 ${mutedText}`}>Reels</p>
-                    </div>
-                    <div className={`p-3.5 rounded-2xl border text-center ${cardBg}`}>
-                      <p className="text-xl font-extrabold text-amber-600">{applications.length}</p>
-                      <p className={`text-[11px] font-medium mt-0.5 ${mutedText}`}>Applicants</p>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold">Compensation</label>
+                      <input
+                        type="text"
+                        value={salary}
+                        onChange={(e) => setSalary(e.target.value)}
+                        placeholder="e.g., ₹3.5 LPA"
+                        className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                      />
                     </div>
                   </div>
 
-                  {/* Manage Active Jobs */}
-                  <div className="space-y-2">
-                    <h3 className={`text-xs font-bold uppercase tracking-wider ${mutedText}`}>
-                      Manage Published Listings
-                    </h3>
-                    {jobs.map((job) => (
-                      <div
-                        key={job.id}
-                        className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${cardBg}`}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold">Department</label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
                       >
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold truncate">{job.title}</p>
-                          <p className={`text-[11px] truncate ${mutedText}`}>
-                            {job.companyName} • {job.location}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleDeleteJob(job.id)}
-                          title="Remove Listing"
-                          className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                        <option>IT & Software</option>
+                        <option>Real Estate & Sales</option>
+                        <option>Engineering & Field</option>
+                        <option>Operations & CRM</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold">Experience</label>
+                      <input
+                        type="text"
+                        value={experience}
+                        onChange={(e) => setExperience(e.target.value)}
+                        placeholder="e.g., Fresher / 1-2 Yrs"
+                        className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                      />
+                    </div>
                   </div>
 
-                  {/* Recent Applications */}
-                  <div className="space-y-2">
-                    <h3 className={`text-xs font-bold uppercase tracking-wider ${mutedText}`}>
-                      Recent Applications
-                    </h3>
-                    {applications.length === 0 ? (
-                      <div className={`p-4 rounded-xl border text-xs ${cardBg} ${mutedText}`}>
-                        No new candidate applications in this session yet.
-                      </div>
-                    ) : (
-                      applications.map((app) => (
-                        <div
-                          key={app.id}
-                          className={`p-3.5 rounded-xl border flex items-center justify-between ${cardBg}`}
-                        >
-                          <div>
-                            <p className="text-xs font-bold">{app.jobTitle}</p>
-                            <p className={`text-[11px] ${mutedText}`}>
-                              {app.candidateName} • {app.companyName}
-                            </p>
-                          </div>
-                          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                            {app.appliedAt}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </main>
-
-        {/* JOB DETAILS BOTTOM SHEET MODAL */}
-        {selectedJob && (
-          <div
-            onClick={() => setSelectedJob(null)}
-            className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-end justify-center"
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-md rounded-t-3xl p-5 space-y-4 border-t shadow-2xl ${
-                lightMode ? "bg-white border-slate-200" : "bg-[#161F33] border-slate-800"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-sm flex items-center justify-center">
-                    {getInitials(selectedJob.companyName)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base">{selectedJob.title}</h3>
-                    <p className={`text-xs font-medium ${mutedText}`}>{selectedJob.companyName}</p>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Role Overview</label>
+                    <textarea
+                      rows={3}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Describe daily responsibilities, shift timing, and required skills..."
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                    />
                   </div>
                 </div>
+
                 <button
-                  onClick={() => setSelectedJob(null)}
-                  className={`p-2 rounded-full ${badgeBg}`}
+                  type="submit"
+                  disabled={posting}
+                  className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition flex items-center justify-center gap-2"
                 >
-                  <X className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
+                  {posting ? "Publishing Listing..." : t.publishBtn}
                 </button>
-              </div>
+              </form>
+            )}
 
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className={`px-3 py-1 rounded-xl border font-medium ${badgeBg}`}>
-                  📍 {selectedJob.location}
-                </span>
-                <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
-                  💰 {selectedJob.salary}
-                </span>
-                <span className={`px-3 py-1 rounded-xl border font-medium ${badgeBg}`}>
-                  🕒 {selectedJob.shiftTiming || "10:00 AM - 7:00 PM"}
-                </span>
-              </div>
+            {/* 3. REELS TAB */}
+            {activeTab === "reels" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight">Workplace Reels</h2>
+                    <p className={`text-xs ${mutedText}`}>Short video previews from hiring teams</p>
+                  </div>
+                  <button
+                    onClick={() => setMuted(!muted)}
+                    className={`p-2 rounded-xl border ${cardBg}`}
+                  >
+                    {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+                </div>
 
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                  Role Description
-                </h4>
-                <p className={`text-xs leading-relaxed ${mutedText}`}>{selectedJob.description}</p>
-              </div>
+                {reels.map((reel) => {
+                  const isLiked = !!likedReels[reel.id];
+                  const likeCount = (reel.likes || 18) + (isLiked ? 1 : 0);
 
-              <div className="pt-2 flex gap-2.5">
-                <button
-                  onClick={(e) => toggleSaveJob(e, selectedJob.id)}
-                  className={`px-4 py-3 rounded-2xl border text-xs font-semibold ${badgeBg}`}
-                >
-                  {savedIds.includes(selectedJob.id) ? "Saved ★" : "Save"}
-                </button>
-                <button
-                  onClick={(e) => {
-                    handleApply(e, selectedJob);
-                    setSelectedJob(null);
-                  }}
-                  disabled={appliedIds.includes(selectedJob.id)}
-                  className={`flex-1 py-3 rounded-2xl text-xs font-semibold text-white transition ${
-                    appliedIds.includes(selectedJob.id)
-                      ? "bg-emerald-600"
-                      : "bg-indigo-600 hover:bg-indigo-700"
-                  }`}
-                >
-                  {appliedIds.includes(selectedJob.id) ? "Application Submitted ✓" : "Submit One-Tap Application"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+                  return (
+                    <div key={reel.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800 p-6 text-white min-h-[240px] flex flex-col justify-between relative">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/15 backdrop-blur-xs">
+                            Company Spotlight
+                          </span>
+                          <span className="text-[11px] text-indigo-200 font-medium">0:30 HD</span>
+                        </div>
 
-        {/* BOTTOM NAVIGATION BAR */}
-        <nav
-          className={`fixed bottom-0 w-full max-w-md border-t px-2 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
-            lightMode ? "bg-white/95 border-slate-200/90" : "bg-[#0F172A]/95 border-slate-800"
-          }`}
-        >
-          {[
-            { id: "reels", label: t.reels, icon: Play },
-            { id: "jobs", label: t.jobs, icon: Briefcase },
-            { id: "post", label: t.jobPost, icon: PlusCircle },
-            { id: "resume", label: t.resume, icon: FileText },
-            { id: "admin", label: t.admin, icon: Shield },
-          ].map((item) => {
-            const Icon = item.icon;
-            const active = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-[11px] font-semibold transition ${
-                  active
-                    ? "text-indigo-600 bg-indigo-50/80"
-                    : lightMode
-                    ? "text-slate-500 hover:text-slate-900"
-                    : "text-slate-400 hover:text-white"
+                        <div className="my-auto flex justify-center">
+                          <button
+                            onClick={() => showToast("Playing workplace spotlight preview")}
+                            className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
+                          >
+                            <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+                          </button>
+                        </div>
+
+                        <div>
+                          <h3 className="font-bold text-base leading-snug">{reel.title}</h3>
+                          <p className="text-xs text-indigo-200 mt-1">
+                            {reel.creatorName} • {reel.roleTag || "Verified Employer"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[11px] flex items-center justify-center">
+                            {getInitials(reel.creatorName)}
+                          </div>
+                          <span className="font-semibold text-xs">{reel.creatorName}</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            onClick={() => setLikedReels((prev) => ({ ...prev, [reel.id]: !prev[reel.id] }))}
+                            className="text-xs font-semibold flex items-center gap-1 text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition"
+                          >
+                            <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`} />
+                            {likeCount}
+                          </button>
+                          <button
+                            onClick={() => showToast("Reel link copied to clipboard")}
+                            className={`p-1.5 rounded-lg border ${badgeBg}`}
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setActiveTab("jobs")}
+                            className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1"
+                          >
+                            Apply <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 4. RESUME BUILDER TAB (CLEAN PLACEHOLDERS + FULL PDF TEMPLATE) */}
+            {activeTab === "resume" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight">Instant Resume Builder</h2>
+                    <p className={`text-xs ${mutedText}`}>Fill details below & download formatted PDF</p>
+                  </div>
+                  <button
+                    onClick={handleDownloadResumePDF}
+                    className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download PDF
+                  </button>
+                </div>
+
+                {/* Live Resume Template Preview Card */}
+                <div className={`p-4 rounded-2xl border-2 border-indigo-600/20 space-y-2.5 ${cardBg}`}>
+                  <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-inherit">
+                        {resumeData.fullName.trim() || "Your Full Name"}
+                      </h3>
+                      <p className="text-xs font-semibold text-indigo-600">
+                        {resumeData.role.trim() || "Target Role / Designation"}
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">
+                      LIVE PREVIEW
+                    </span>
+                  </div>
+
+                  <div className={`flex flex-wrap gap-3 text-[11px] ${mutedText}`}>
+                    <span className="flex items-center gap-1">
+                      <Phone className="w-3 h-3" />
+                      {resumeData.phone.trim() || "+91 00000 00000"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      {resumeData.email.trim() || "you@email.com"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {resumeData.location.trim() || "City, State"}
+                    </span>
+                  </div>
+
+                  <p className={`text-[11px] leading-relaxed ${mutedText}`}>
+                    {resumeData.summary.trim() ||
+                      "Your professional summary will appear here automatically in the exported PDF."}
+                  </p>
+
+                  {skillTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {skillTags.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-semibold"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Inputs with Clear Instructional Placeholders */}
+                <div className={`p-4 rounded-2xl border space-y-3 ${cardBg}`}>
+                  <p className="text-xs font-bold">Enter Your Details</p>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Full Name *</label>
+                    <input
+                      type="text"
+                      value={resumeData.fullName}
+                      onChange={(e) => setResumeData({ ...resumeData, fullName: e.target.value })}
+                      placeholder="Enter your full name (e.g., Aarav Sharma)"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Target Job Role</label>
+                    <input
+                      type="text"
+                      value={resumeData.role}
+                      onChange={(e) => setResumeData({ ...resumeData, role: e.target.value })}
+                      placeholder="Enter desired role (e.g., Android Developer / Sales Executive)"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold">Mobile Number</label>
+                      <input
+                        type="text"
+                        value={resumeData.phone}
+                        onChange={(e) => setResumeData({ ...resumeData, phone: e.target.value })}
+                        placeholder="e.g., +91 98765 43210"
+                        className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold">Email Address</label>
+                      <input
+                        type="email"
+                        value={resumeData.email}
+                        onChange={(e) => setResumeData({ ...resumeData, email: e.target.value })}
+                        placeholder="e.g., name@gmail.com"
+                        className={`w-full px-3 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Current City / Location</label>
+                    <input
+                      type="text"
+                      value={resumeData.location}
+                      onChange={(e) => setResumeData({ ...resumeData, location: e.target.value })}
+                      placeholder="Enter city & state (e.g., Baner, Pune, Maharashtra)"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Professional Summary</label>
+                    <textarea
+                      rows={2}
+                      value={resumeData.summary}
+                      onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
+                      placeholder="Briefly describe your strengths & career objective (leave blank for auto-template)..."
+                      className={`w-full px-3.5 py-2 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Key Skills (Comma-Separated)</label>
+                    <input
+                      type="text"
+                      value={resumeData.skills}
+                      onChange={(e) => setResumeData({ ...resumeData, skills: e.target.value })}
+                      placeholder="e.g., Java, Android Studio, REST APIs, Communication"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Experience / Key Projects</label>
+                    <textarea
+                      rows={2}
+                      value={resumeData.experienceOrProjects}
+                      onChange={(e) =>
+                        setResumeData({ ...resumeData, experienceOrProjects: e.target.value })
+                      }
+                      placeholder="List past internship, work experience, or major projects..."
+                      className={`w-full px-3.5 py-2 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold">Highest Education</label>
+                    <input
+                      type="text"
+                      value={resumeData.education}
+                      onChange={(e) => setResumeData({ ...resumeData, education: e.target.value })}
+                      placeholder="e.g., B.E. / B.Sc. / Diploma - University Name (Year)"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadResumePDF}
+                    className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition"
+                  >
+                    <Download className="w-4 h-4" /> Generate & Download Full Resume PDF
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 5. ADMIN TAB WITH PASSWORD LOGIN & LISTING MANAGEMENT */}
+            {activeTab === "admin" && (
+              <div className="space-y-4">
+                {!isAdminAuth ? (
+                  <form
+                    onSubmit={handleAdminLogin}
+                    className={`p-6 rounded-2xl border space-y-4 mt-4 ${cardBg}`}
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold tracking-tight">{t.adminLoginTitle}</h2>
+                      <p className={`text-xs mt-1 ${mutedText}`}>{t.adminLoginSub}</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold">Administrator Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="Enter administrator password"
+                        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none ${inputBg}`}
+                      />
+                    </div>
+
+                    {adminError && (
+                      <p className="text-xs font-semibold text-rose-600">{adminError}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition"
+                    >
+                      {t.unlockBtn}
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold tracking-tight">Admin Dashboard</h2>
+                        <p className={`text-xs ${mutedText}`}>Live platform metrics & moderation</p>
+                      </div>
+                      <button
+                        onClick={() => setIsAdminAuth(false)}
+                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold flex items-center gap-1"
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Sign Out
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2.5">
+                      <div className={`p-3.5 rounded-2xl border text-center ${cardBg}`}>
+                        <p className="text-xl font-extrabold text-indigo-600">{jobs.length}</p>
+                        <p className={`text-[11px] font-medium mt-0.5 ${mutedText}`}>Active Jobs</p>
+                      </div>
+                      <div className={`p-3.5 rounded-2xl border text-center ${cardBg}`}>
+                        <p className="text-xl font-extrabold text-emerald-600">{reels.length}</p>
+                        <p className={`text-[11px] font-medium mt-0.5 ${mutedText}`}>Reels</p>
+                      </div>
+                      <div className={`p-3.5 rounded-2xl border text-center ${cardBg}`}>
+                        <p className="text-xl font-extrabold text-amber-600">{applications.length}</p>
+                        <p className={`text-[11px] font-medium mt-0.5 ${mutedText}`}>Applicants</p>
+                      </div>
+                    </div>
+
+                    {/* Manage Active Jobs */}
+                    <div className="space-y-2">
+                      <h3 className={`text-xs font-bold uppercase tracking-wider ${mutedText}`}>
+                        Manage Published Listings
+                      </h3>
+                      {jobs.map((job) => (
+                        <div
+                          key={job.id}
+                          className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${cardBg}`}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold truncate">{job.title}</p>
+                            <p className={`text-[11px] truncate ${mutedText}`}>
+                              {job.companyName} • {job.location}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteJob(job.id)}
+                            title="Remove Listing"
+                            className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Recent Applications */}
+                    <div className="space-y-2">
+                      <h3 className={`text-xs font-bold uppercase tracking-wider ${mutedText}`}>
+                        Recent Applications
+                      </h3>
+                      {applications.length === 0 ? (
+                        <div className={`p-4 rounded-xl border text-xs ${cardBg} ${mutedText}`}>
+                          No new candidate applications in this session yet.
+                        </div>
+                      ) : (
+                        applications.map((app) => (
+                          <div
+                            key={app.id}
+                            className={`p-3.5 rounded-xl border flex items-center justify-between ${cardBg}`}
+                          >
+                            <div>
+                              <p className="text-xs font-bold">{app.jobTitle}</p>
+                              <p className={`text-[11px] ${mutedText}`}>
+                                {app.candidateName} • {app.companyName}
+                              </p>
+                            </div>
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                              {app.appliedAt}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* JOB DETAILS BOTTOM SHEET MODAL */}
+          {selectedJob && (
+            <div
+              onClick={() => setSelectedJob(null)}
+              className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-end justify-center"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className={`w-full max-w-md rounded-t-3xl p-5 space-y-4 border-t shadow-2xl ${
+                  lightMode ? "bg-white border-slate-200" : "bg-[#161F33] border-slate-800"
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-sm flex items-center justify-center">
+                      {getInitials(selectedJob.companyName)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base">{selectedJob.title}</h3>
+                      <p className={`text-xs font-medium ${mutedText}`}>{selectedJob.companyName}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedJob(null)}
+                    className={`p-2 rounded-full ${badgeBg}`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className={`px-3 py-1 rounded-xl border font-medium ${badgeBg}`}>
+                    📍 {selectedJob.location}
+                  </span>
+                  <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                    💰 {selectedJob.salary}
+                  </span>
+                  <span className={`px-3 py-1 rounded-xl border font-medium ${badgeBg}`}>
+                    🕒 {selectedJob.shiftTiming || "10:00 AM - 7:00 PM"}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                    Role Description
+                  </h4>
+                  <p className={`text-xs leading-relaxed ${mutedText}`}>{selectedJob.description}</p>
+                </div>
+
+                <div className="pt-2 flex gap-2.5">
+                  <button
+                    onClick={(e) => toggleSaveJob(e, selectedJob.id)}
+                    className={`px-4 py-3 rounded-2xl border text-xs font-semibold ${badgeBg}`}
+                  >
+                    {savedIds.includes(selectedJob.id) ? "Saved ★" : "Save"}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      handleApply(e, selectedJob);
+                      setSelectedJob(null);
+                    }}
+                    disabled={appliedIds.includes(selectedJob.id)}
+                    className={`flex-1 py-3 rounded-2xl text-xs font-semibold text-white transition ${
+                      appliedIds.includes(selectedJob.id)
+                        ? "bg-emerald-600"
+                        : "bg-indigo-600 hover:bg-indigo-700"
+                    }`}
+                  >
+                    {appliedIds.includes(selectedJob.id)
+                      ? "Application Submitted ✓"
+                      : "Submit One-Tap Application"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BOTTOM NAVIGATION BAR */}
+          <nav
+            className={`fixed bottom-0 w-full max-w-md border-t px-2 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
+              lightMode ? "bg-white/95 border-slate-200/90" : "bg-[#0F172A]/95 border-slate-800"
+            }`}
+          >
+            {[
+              { id: "reels", label: t.reels, icon: Play },
+              { id: "jobs", label: t.jobs, icon: Briefcase },
+              { id: "post", label: t.jobPost, icon: PlusCircle },
+              { id: "resume", label: t.resume, icon: FileText },
+              { id: "admin", label: t.admin, icon: Shield },
+            ].map((item) => {
+              const Icon = item.icon;
+              const active = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-[11px] font-semibold transition ${
+                    active
+                      ? "text-indigo-600 bg-indigo-50/80"
+                      : lightMode
+                      ? "text-slate-500 hover:text-slate-900"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
