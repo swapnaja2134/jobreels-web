@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Play,
   Briefcase,
@@ -30,6 +30,10 @@ import {
   Mail,
   ChevronRight,
   RotateCcw,
+  User,
+  Upload,
+  FileCheck2,
+  Check,
 } from "lucide-react";
 
 const API_BASE = "https://jobreels-backend.onrender.com";
@@ -40,6 +44,7 @@ const TRANSLATIONS = {
     jobs: "Jobs",
     jobPost: "Job Post",
     resume: "Resume",
+    profile: "Profile",
     admin: "Admin",
     verifiedJobs: "Explore Opportunities",
     searchPlaceholder: "Search job title, company, skills, or city...",
@@ -55,12 +60,15 @@ const TRANSLATIONS = {
     adminLoginTitle: "Admin Portal",
     adminLoginSub: "Sign in with administrator credentials to manage listings.",
     unlockBtn: "Sign In",
+    myProfileTitle: "My Profile",
+    myProfileSub: "Manage your uploaded resume and track job applications.",
   },
   HI: {
     reels: "रील्स",
     jobs: "नौकरियां",
     jobPost: "जॉब पोस्ट",
     resume: "बायोडाटा",
+    profile: "प्रोफ़ाइल",
     admin: "एडमिन",
     verifiedJobs: "सत्यापित नौकरियां",
     searchPlaceholder: "पद, कंपनी, कौशल या शहर खोजें...",
@@ -76,12 +84,15 @@ const TRANSLATIONS = {
     adminLoginTitle: "एडमिन पोर्टल",
     adminLoginSub: "प्रबंधन के लिए एडमिन पासवर्ड दर्ज करें।",
     unlockBtn: "साइन इन करें",
+    myProfileTitle: "मेरी प्रोफ़ाइल",
+    myProfileSub: "अपना बायोडाटा अपलोड करें और आवेदनों को ट्रैक करें।",
   },
   MR: {
     reels: "रील्स",
     jobs: "नोकऱ्या",
     jobPost: "जॉब पोस्ट",
     resume: "बायोडाटा",
+    profile: "प्रोफाईल",
     admin: "अॅडमिन",
     verifiedJobs: "सत्यापित नोकऱ्या",
     searchPlaceholder: "पद, कंपनी, कौशल्य किंवा शहर शोधा...",
@@ -97,6 +108,8 @@ const TRANSLATIONS = {
     adminLoginTitle: "अॅडमिन पोर्टल",
     adminLoginSub: "व्यवस्थापनासाठी अॅडमिन पासवर्ड टाका.",
     unlockBtn: "साइन इन करा",
+    myProfileTitle: "माझी प्रोफाईल",
+    myProfileSub: "तुमचा रेझ्युमे अपलोड करा आणि अर्जांची स्थिती पहा.",
   },
 };
 
@@ -112,6 +125,7 @@ const ROLE_PRESETS = [
 ];
 
 const QUICK_CHIPS = ["All", "Remote", "IT & Software", "Real Estate", "Engineering"];
+const APPLICATION_STAGES = ["Applied", "Under Review", "Shortlisted"];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("jobs");
@@ -133,9 +147,9 @@ export default function App() {
   // Enhanced Search & Multi-Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [workModeFilter, setWorkModeFilter] = useState("All"); // All | Remote | On-Site
+  const [workModeFilter, setWorkModeFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [experienceFilter, setExperienceFilter] = useState("All"); // All | Fresher | Experienced
+  const [experienceFilter, setExperienceFilter] = useState("All");
   const [onlySavedFilter, setOnlySavedFilter] = useState(false);
 
   // Job Post State
@@ -167,6 +181,11 @@ export default function App() {
     experienceOrProjects: "",
     education: "",
   });
+
+  // My Profile Resume Upload & Sub-tab State
+  const [uploadedResume, setUploadedResume] = useState(null);
+  const [profileSubTab, setProfileSubTab] = useState("applied"); // applied | saved
+  const fileInputRef = useRef(null);
 
   const [muted, setMuted] = useState(true);
   const t = TRANSLATIONS[lang];
@@ -203,7 +222,7 @@ export default function App() {
       showToast("Removed from saved jobs");
     } else {
       setSavedIds((prev) => [...prev, id]);
-      showToast("Job saved to bookmarks");
+      showToast("Job saved to My Profile");
     }
   };
 
@@ -211,18 +230,23 @@ export default function App() {
     if (e) e.stopPropagation();
     if (appliedIds.includes(job.id)) return;
 
-    const applicantName = resumeData.fullName.trim() || "Verified Candidate";
+    const applicantName = resumeData.fullName.trim() || "Candidate";
     setAppliedIds((prev) => [...prev, job.id]);
     const newApp = {
       id: Date.now(),
       jobId: job.id,
       jobTitle: job.title,
       companyName: job.companyName,
+      location: job.location,
+      salary: job.salary,
       candidateName: applicantName,
+      resumeAttached: uploadedResume ? uploadedResume.name : "Digital Profile",
+      stageIndex: 0, // 0 = Applied, 1 = Under Review, 2 = Shortlisted
       appliedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      appliedDate: new Date().toLocaleDateString([], { day: "2-digit", month: "short" }),
     };
     setApplications((prev) => [newApp, ...prev]);
-    showToast(`Applied to ${job.title} • Recruiter notified`);
+    showToast(`Applied to ${job.title} • Track in Profile`);
 
     try {
       await fetch(`${API_BASE}/api/applications`, {
@@ -239,6 +263,29 @@ export default function App() {
     } catch (err) {
       console.error("Apply sync error:", err);
     }
+  };
+
+  const advanceApplicationStage = (appId) => {
+    setApplications((prev) =>
+      prev.map((app) =>
+        app.id === appId
+          ? { ...app, stageIndex: (app.stageIndex + 1) % APPLICATION_STAGES.length }
+          : app
+      )
+    );
+    showToast("Application tracking status updated");
+  };
+
+  const handleResumeFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const sizeKB = Math.max(1, Math.round(file.size / 1024));
+    setUploadedResume({
+      name: file.name,
+      size: sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`,
+      uploadedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
+    showToast(`Resume "${file.name}" uploaded successfully`);
   };
 
   const handlePublishJob = async (e) => {
@@ -356,7 +403,12 @@ export default function App() {
 
     if (experienceFilter !== "All") {
       const expText = `${job.experience || ""} ${job.title || ""}`.toLowerCase();
-      if (experienceFilter === "Fresher" && !expText.includes("fresher") && !expText.includes("junior") && !expText.includes("0-1")) {
+      if (
+        experienceFilter === "Fresher" &&
+        !expText.includes("fresher") &&
+        !expText.includes("junior") &&
+        !expText.includes("0-1")
+      ) {
         return false;
       }
       if (experienceFilter === "Experienced" && expText.includes("fresher")) {
@@ -368,6 +420,8 @@ export default function App() {
 
     return true;
   });
+
+  const savedJobsList = jobs.filter((job) => savedIds.includes(job.id));
 
   const getInitials = (name) => {
     if (!name) return "JR";
@@ -1022,7 +1076,9 @@ export default function App() {
 
                         <div className="flex items-center gap-2.5">
                           <button
-                            onClick={() => setLikedReels((prev) => ({ ...prev, [reel.id]: !prev[reel.id] }))}
+                            onClick={() =>
+                              setLikedReels((prev) => ({ ...prev, [reel.id]: !prev[reel.id] }))
+                            }
                             className="text-xs font-semibold flex items-center gap-1 text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition"
                           >
                             <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`} />
@@ -1048,7 +1104,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 4. RESUME BUILDER TAB (CLEAN PLACEHOLDERS + FULL PDF TEMPLATE) */}
+            {/* 4. RESUME BUILDER TAB (PLACEHOLDERS + FULL PDF TEMPLATE) */}
             {activeTab === "resume" && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -1231,7 +1287,277 @@ export default function App() {
               </div>
             )}
 
-            {/* 5. ADMIN TAB WITH PASSWORD LOGIN & LISTING MANAGEMENT */}
+            {/* 5. MY PROFILE TAB (RESUME UPLOAD + APPLIED JOBS TRACKER) */}
+            {activeTab === "profile" && (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">{t.myProfileTitle}</h2>
+                  <p className={`text-xs mt-0.5 ${mutedText}`}>{t.myProfileSub}</p>
+                </div>
+
+                {/* Candidate Identity Card */}
+                <div className={`p-4 rounded-2xl border flex items-center justify-between ${cardBg}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
+                      {getInitials(resumeData.fullName || "Candidate")}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm">
+                        {resumeData.fullName.trim() || "Candidate Profile"}
+                      </h3>
+                      <p className={`text-xs ${mutedText}`}>
+                        {resumeData.role.trim() || "Job Seeker • Pune"}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1.5 text-[11px] font-semibold">
+                        <span className="text-indigo-600">{applications.length} Applied</span>
+                        <span className="text-amber-600">{savedIds.length} Saved</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("resume")}
+                    className={`px-3 py-1.5 rounded-xl border text-[11px] font-semibold ${badgeBg}`}
+                  >
+                    Edit Info
+                  </button>
+                </div>
+
+                {/* Resume Upload Card */}
+                <div className={`p-4 rounded-2xl border space-y-3 ${cardBg}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold">Uploaded Resume (PDF / DOCX)</h3>
+                      <p className={`text-[11px] ${mutedText}`}>
+                        Used automatically when you tap One-Tap Apply
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("resume")}
+                      className="text-[11px] font-semibold text-indigo-600 hover:underline"
+                    >
+                      Build Resume
+                    </button>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleResumeFileUpload}
+                    className="hidden"
+                  />
+
+                  {!uploadedResume ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition ${
+                        lightMode
+                          ? "border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50"
+                          : "border-slate-700 bg-slate-800/40 hover:bg-slate-800"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-2">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold">Tap to Upload Your Resume</p>
+                      <p className={`text-[11px] mt-0.5 ${mutedText}`}>
+                        Supports PDF, DOC, DOCX (Max 5 MB)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                          <FileCheck2 className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {uploadedResume.name}
+                          </p>
+                          <p className="text-[11px] text-emerald-700 font-medium">
+                            {uploadedResume.size} • Uploaded at {uploadedResume.uploadedAt}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-semibold text-slate-700"
+                        >
+                          Replace
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUploadedResume(null);
+                            showToast("Uploaded resume removed");
+                          }}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sub-tabs: Applied Jobs Tracker vs Saved Jobs */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setProfileSubTab("applied")}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${
+                      profileSubTab === "applied"
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : cardBg
+                    }`}
+                  >
+                    Applied Jobs ({applications.length})
+                  </button>
+                  <button
+                    onClick={() => setProfileSubTab("saved")}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${
+                      profileSubTab === "saved"
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : cardBg
+                    }`}
+                  >
+                    Saved Jobs ({savedJobsList.length})
+                  </button>
+                </div>
+
+                {/* APPLIED JOBS TRACKING LIST */}
+                {profileSubTab === "applied" && (
+                  <div className="space-y-3">
+                    {applications.length === 0 ? (
+                      <div className={`p-6 rounded-2xl border text-center space-y-2 ${cardBg}`}>
+                        <p className="text-sm font-bold">No Job Applications Yet</p>
+                        <p className={`text-xs ${mutedText}`}>
+                          Tap "One-Tap Apply" on any job in the Jobs tab to track its progress here.
+                        </p>
+                        <button
+                          onClick={() => setActiveTab("jobs")}
+                          className="mt-1 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
+                        >
+                          Browse Verified Jobs
+                        </button>
+                      </div>
+                    ) : (
+                      applications.map((app) => (
+                        <div key={app.id} className={`p-4 rounded-2xl border space-y-3 ${cardBg}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-bold text-sm">{app.jobTitle}</h4>
+                              <p className={`text-xs ${mutedText}`}>
+                                {app.companyName} • {app.location}
+                              </p>
+                            </div>
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              {APPLICATION_STAGES[app.stageIndex]}
+                            </span>
+                          </div>
+
+                          {/* 3-Step Visual Status Tracker */}
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex items-center justify-between">
+                              {APPLICATION_STAGES.map((stage, idx) => {
+                                const done = idx <= app.stageIndex;
+                                return (
+                                  <div key={stage} className="flex items-center flex-1 last:flex-none">
+                                    <div className="flex flex-col items-center">
+                                      <div
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition ${
+                                          done
+                                            ? "bg-emerald-600 text-white"
+                                            : "bg-slate-200 text-slate-500"
+                                        }`}
+                                      >
+                                        {done ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                                      </div>
+                                      <span
+                                        className={`text-[10px] font-semibold mt-1 ${
+                                          done ? "text-emerald-700" : mutedText
+                                        }`}
+                                      >
+                                        {stage}
+                                      </span>
+                                    </div>
+                                    {idx < APPLICATION_STAGES.length - 1 && (
+                                      <div
+                                        className={`h-0.5 flex-1 mx-1.5 -mt-4 ${
+                                          idx < app.stageIndex ? "bg-emerald-500" : "bg-slate-200"
+                                        }`}
+                                      />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span className={mutedText}>
+                              Submitted: {app.appliedDate}, {app.appliedAt} • {app.resumeAttached}
+                            </span>
+                            <button
+                              onClick={() => advanceApplicationStage(app.id)}
+                              className="text-indigo-600 font-semibold hover:underline"
+                            >
+                              Update Status
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* SAVED JOBS LIST */}
+                {profileSubTab === "saved" && (
+                  <div className="space-y-3">
+                    {savedJobsList.length === 0 ? (
+                      <div className={`p-6 rounded-2xl border text-center ${cardBg}`}>
+                        <p className="text-sm font-bold">No Saved Jobs</p>
+                        <p className={`text-xs mt-1 ${mutedText}`}>
+                          Bookmark any job card to save it here for later.
+                        </p>
+                      </div>
+                    ) : (
+                      savedJobsList.map((job) => {
+                        const isApplied = appliedIds.includes(job.id);
+                        return (
+                          <div
+                            key={job.id}
+                            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2 ${cardBg}`}
+                          >
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold truncate">{job.title}</p>
+                              <p className={`text-[11px] truncate ${mutedText}`}>
+                                {job.companyName} • {job.salary}
+                              </p>
+                            </div>
+                            <button
+                              onClick={(e) => handleApply(e, job)}
+                              disabled={isApplied}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 ${
+                                isApplied
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-indigo-600 text-white"
+                              }`}
+                            >
+                              {isApplied ? "Applied ✓" : "Apply"}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 6. ADMIN TAB WITH PASSWORD LOGIN & LISTING MANAGEMENT */}
             {activeTab === "admin" && (
               <div className="space-y-4">
                 {!isAdminAuth ? (
@@ -1438,9 +1764,9 @@ export default function App() {
             </div>
           )}
 
-          {/* BOTTOM NAVIGATION BAR */}
+          {/* BOTTOM NAVIGATION BAR (6 TABS INCLUDING MY PROFILE) */}
           <nav
-            className={`fixed bottom-0 w-full max-w-md border-t px-2 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
+            className={`fixed bottom-0 w-full max-w-md border-t px-1 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
               lightMode ? "bg-white/95 border-slate-200/90" : "bg-[#0F172A]/95 border-slate-800"
             }`}
           >
@@ -1449,6 +1775,7 @@ export default function App() {
               { id: "jobs", label: t.jobs, icon: Briefcase },
               { id: "post", label: t.jobPost, icon: PlusCircle },
               { id: "resume", label: t.resume, icon: FileText },
+              { id: "profile", label: t.profile, icon: User },
               { id: "admin", label: t.admin, icon: Shield },
             ].map((item) => {
               const Icon = item.icon;
@@ -1457,7 +1784,7 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-[11px] font-semibold transition ${
+                  className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl text-[10px] font-semibold transition ${
                     active
                       ? "text-indigo-600 bg-indigo-50/80"
                       : lightMode
@@ -1465,7 +1792,7 @@ export default function App() {
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </button>
               );
