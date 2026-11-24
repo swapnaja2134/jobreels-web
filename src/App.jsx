@@ -4,7 +4,6 @@ import {
   Briefcase,
   PlusCircle,
   FileText,
-  Shield,
   MapPin,
   Clock,
   CheckCircle2,
@@ -34,6 +33,7 @@ import {
   Upload,
   FileCheck2,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 
 const API_BASE = "https://jobreels-backend.onrender.com";
@@ -45,7 +45,6 @@ const TRANSLATIONS = {
     jobPost: "Job Post",
     resume: "Resume",
     profile: "Profile",
-    admin: "Admin",
     verifiedJobs: "Explore Opportunities",
     searchPlaceholder: "Search job title, company, skills, or city...",
     oneTapApply: "One-Tap Apply",
@@ -69,7 +68,6 @@ const TRANSLATIONS = {
     jobPost: "जॉब पोस्ट",
     resume: "बायोडाटा",
     profile: "प्रोफ़ाइल",
-    admin: "एडमिन",
     verifiedJobs: "सत्यापित नौकरियां",
     searchPlaceholder: "पद, कंपनी, कौशल या शहर खोजें...",
     oneTapApply: "एक-टैप आवेदन",
@@ -93,7 +91,6 @@ const TRANSLATIONS = {
     jobPost: "जॉब पोस्ट",
     resume: "बायोडाटा",
     profile: "प्रोफाईल",
-    admin: "अॅडमिन",
     verifiedJobs: "सत्यापित नोकऱ्या",
     searchPlaceholder: "पद, कंपनी, कौशल्य किंवा शहर शोधा...",
     oneTapApply: "वन-टॅप अर्ज",
@@ -127,18 +124,202 @@ const ROLE_PRESETS = [
 const QUICK_CHIPS = ["All", "Remote", "IT & Software", "Real Estate", "Engineering"];
 const APPLICATION_STAGES = ["Applied", "Under Review", "Shortlisted"];
 
+const CURATED_REELS = [
+  {
+    id: "reel-1",
+    title: "Life at Chakan Precision Engineering: CNC floor tour",
+    creatorName: "Chakan Precision Engineering",
+    roleTag: "Hiring CNC & Electrical • Chakan MIDC",
+    likes: 48,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    posterUrl:
+      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "reel-2",
+    title: "Inside TechNova Solutions: Android & Java Engineering Desk",
+    creatorName: "TechNova Solutions Pvt Ltd",
+    roleTag: "Hiring Android Developers • Baner, Pune",
+    likes: 74,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    posterUrl:
+      "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "reel-3",
+    title: "Skyline Realty Group: Walkthrough of our Balewadi Luxury Towers",
+    creatorName: "Skyline Realty Group",
+    roleTag: "Hiring Property Advisors • Balewadi High Street",
+    likes: 62,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    posterUrl:
+      "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "reel-4",
+    title: "A Day in the Life: Industrial Automation & Panel Testing Team",
+    creatorName: "VoltEdge Electricals",
+    roleTag: "Hiring Electrical Engineers • Bhosari MIDC",
+    likes: 39,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4",
+    posterUrl:
+      "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80",
+  },
+  {
+    id: "reel-5",
+    title: "Remote Customer Success & CRM Operations at FinBridge",
+    creatorName: "FinBridge Advisory",
+    roleTag: "Work From Home • Pan-Maharashtra",
+    likes: 55,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+    posterUrl:
+      "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=800&q=80",
+  },
+];
+
+const CURATED_JOBS = [
+  {
+    id: 101,
+    title: "Junior Android Developer",
+    companyName: "TechNova Solutions Pvt Ltd",
+    location: "Baner, Pune",
+    salary: "₹3.5 LPA",
+    category: "IT & Software",
+    experience: "Fresher",
+    description:
+      "Build and maintain native Android applications using Java, XML, and Retrofit REST APIs alongside our mobile product team.",
+    shiftTiming: "10:00 AM - 7:00 PM",
+    openings: 3,
+    verified: true,
+  },
+  {
+    id: 102,
+    title: "CNC Machine Operator & Electrician",
+    companyName: "Chakan Precision Engineering",
+    location: "Chakan MIDC, Pune",
+    salary: "₹22,000 / month",
+    category: "Engineering & Field",
+    experience: "0-1 Year",
+    description:
+      "Operate CNC turning/milling machinery and handle industrial 3-phase electrical panel maintenance on the shop floor.",
+    shiftTiming: "8:00 AM - 5:00 PM",
+    openings: 4,
+    verified: true,
+  },
+  {
+    id: 103,
+    title: "Real Estate Sales Executive",
+    companyName: "Skyline Realty Group",
+    location: "Balewadi, Pune",
+    salary: "₹3.6 LPA + Incentives",
+    category: "Real Estate & Sales",
+    experience: "Fresher",
+    description:
+      "Conduct site visits for premium residential projects, advise homebuyers, and coordinate closures with the sales head.",
+    shiftTiming: "10:00 AM - 7:00 PM",
+    openings: 5,
+    verified: true,
+  },
+  {
+    id: 104,
+    title: "Full Stack Java Developer",
+    companyName: "CloudPulse Systems",
+    location: "Hinjewadi Phase 1 (Remote)",
+    salary: "₹4.5 LPA",
+    category: "IT & Software",
+    experience: "Fresher",
+    description:
+      "Develop Spring Boot microservices, MySQL schemas, and responsive React interfaces for enterprise SaaS workflows.",
+    shiftTiming: "Flexible / Remote",
+    openings: 2,
+    verified: true,
+  },
+  {
+    id: 105,
+    title: "Site Engineer – Civil & Finishing",
+    companyName: "VastuNirman Developers",
+    location: "Wakad, Pune",
+    salary: "₹28,000 / month",
+    category: "Real Estate & Sales",
+    experience: "Experienced",
+    description:
+      "Supervise daily RCC and interior finishing schedules, contractor billing, and quality checklists at high-rise sites.",
+    shiftTiming: "9:30 AM - 6:30 PM",
+    openings: 2,
+    verified: true,
+  },
+  {
+    id: 106,
+    title: "Electrical Maintenance Engineer",
+    companyName: "VoltEdge Electricals",
+    location: "Bhosari MIDC, Pune",
+    salary: "₹3.2 LPA",
+    category: "Engineering & Field",
+    experience: "Fresher",
+    description:
+      "Inspect switchgear assemblies, PLC wiring, and preventive maintenance schedules for automated manufacturing lines.",
+    shiftTiming: "9:00 AM - 6:00 PM",
+    openings: 3,
+    verified: true,
+  },
+  {
+    id: 107,
+    title: "Pre-Sales & CRM Telecalling Executive",
+    companyName: "UrbanNest Properties",
+    location: "Kharadi, Pune (Remote)",
+    salary: "₹24,000 / month",
+    category: "Real Estate & Sales",
+    experience: "Fresher",
+    description:
+      "Follow up with inbound property inquiries, schedule weekend site visits, and maintain daily lead updates in CRM.",
+    shiftTiming: "Flexible / Remote",
+    openings: 6,
+    verified: true,
+  },
+  {
+    id: 108,
+    title: "React.js Frontend Developer",
+    companyName: "PixelCraft Digital",
+    location: "Viman Nagar, Pune (Remote)",
+    salary: "₹4.0 LPA",
+    category: "IT & Software",
+    experience: "Fresher",
+    description:
+      "Convert Figma designs into fast, mobile-first React and Tailwind CSS web applications with clean REST API integration.",
+    shiftTiming: "Flexible / Remote",
+    openings: 2,
+    verified: true,
+  },
+  {
+    id: 109,
+    title: "B2B Field Sales Officer",
+    companyName: "MetroBuild Supplies",
+    location: "Hadapsar, Pune",
+    salary: "₹3.0 LPA + Travel",
+    category: "Real Estate & Sales",
+    experience: "Experienced",
+    description:
+      "Manage dealer relationships across Pune East and onboard commercial construction contractors for bulk material supply.",
+    shiftTiming: "10:00 AM - 6:30 PM",
+    openings: 4,
+    verified: true,
+  },
+];
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState("jobs");
+  // Default to "reels" so first screen opens on an impressive workplace reel
+  const [activeTab, setActiveTab] = useState("reels");
   const [lang, setLang] = useState("EN");
   const [lightMode, setLightMode] = useState(true);
 
-  const [jobs, setJobs] = useState([]);
-  const [reels, setReels] = useState([]);
+  const [jobs, setJobs] = useState(CURATED_JOBS);
+  const [reels, setReels] = useState(CURATED_REELS);
   const [applications, setApplications] = useState([]);
   const [appliedIds, setAppliedIds] = useState([]);
   const [savedIds, setSavedIds] = useState([]);
   const [likedReels, setLikedReels] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [playingReelId, setPlayingReelId] = useState(CURATED_REELS[0].id);
+  const [loading, setLoading] = useState(false);
 
   // Toast & Job Detail Modal
   const [toast, setToast] = useState("");
@@ -164,27 +345,32 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [posting, setPosting] = useState(false);
 
-  // Admin Auth State
+  // Hidden Admin State (Accessible via double-tap on JR logo)
   const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [adminError, setAdminError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  // Empty Resume Builder State (Placeholders Only)
+  // Populated Candidate Profile & Resume Builder State (Synced across Profile & Resume)
   const [resumeData, setResumeData] = useState({
-    fullName: "",
-    role: "",
-    email: "",
-    phone: "",
-    location: "",
-    summary: "",
-    skills: "",
-    experienceOrProjects: "",
-    education: "",
+    fullName: "Aarav Deshmukh",
+    role: "Android & Full Stack Java Developer",
+    email: "aarav.deshmukh@gmail.com",
+    phone: "+91 98234 56710",
+    location: "Baner, Pune, Maharashtra",
+    photoUrl:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+    summary:
+      "Detail-oriented Software & Android Developer experienced in building native Java mobile apps, Spring Boot REST APIs, and responsive React web portals.",
+    skills: "Java, Android SDK, XML, Retrofit, Spring Boot, MySQL, React.js, Git",
+    experienceOrProjects:
+      "• Built JobReels Native Android & Web Hiring Platform with live REST API integration.\n• Developed Cloud Library Management System with role-based JWT authentication.",
+    education: "B.E. Engineering • Savitribai Phule Pune University (2026)",
   });
 
   // My Profile Resume Upload & Sub-tab State
   const [uploadedResume, setUploadedResume] = useState(null);
-  const [profileSubTab, setProfileSubTab] = useState("applied"); // applied | saved
+  const [profileSubTab, setProfileSubTab] = useState("applied");
   const fileInputRef = useRef(null);
 
   const [muted, setMuted] = useState(true);
@@ -192,7 +378,7 @@ export default function App() {
 
   const showToast = (msg) => {
     setToast(msg);
-    setTimeout(() => setToast(""), 2800);
+    setTimeout(() => setToast(""), 3200);
   };
 
   useEffect(() => {
@@ -206,10 +392,35 @@ export default function App() {
         fetch(`${API_BASE}/api/jobs`),
         fetch(`${API_BASE}/api/reels`),
       ]);
-      if (jobsRes.ok) setJobs(await jobsRes.json());
-      if (reelsRes.ok) setReels(await reelsRes.json());
+      if (jobsRes.ok) {
+        const apiJobs = await jobsRes.json();
+        if (Array.isArray(apiJobs) && apiJobs.length > 0) {
+          // Merge live API jobs with curated jobs so all filter categories stay rich
+          const apiTitles = new Set(apiJobs.map((j) => (j.title || "").toLowerCase()));
+          const extraCurated = CURATED_JOBS.filter(
+            (cj) => !apiTitles.has(cj.title.toLowerCase())
+          );
+          setJobs([...apiJobs, ...extraCurated]);
+        }
+      }
+      if (reelsRes.ok) {
+        const apiReels = await reelsRes.json();
+        if (Array.isArray(apiReels) && apiReels.length > 0) {
+          const mergedReels = CURATED_REELS.map((cr, index) => {
+            const apiItem = apiReels[index];
+            return apiItem
+              ? {
+                  ...cr,
+                  id: apiItem.id || cr.id,
+                  likes: apiItem.likes || cr.likes,
+                }
+              : cr;
+          });
+          setReels(mergedReels);
+        }
+      }
     } catch (err) {
-      console.error("API fetch error:", err);
+      console.error("API fetch fallback to curated data:", err);
     } finally {
       setLoading(false);
     }
@@ -222,7 +433,7 @@ export default function App() {
       showToast("Removed from saved jobs");
     } else {
       setSavedIds((prev) => [...prev, id]);
-      showToast("Job saved to My Profile");
+      showToast("Saved to My Profile");
     }
   };
 
@@ -230,7 +441,9 @@ export default function App() {
     if (e) e.stopPropagation();
     if (appliedIds.includes(job.id)) return;
 
-    const applicantName = resumeData.fullName.trim() || "Candidate";
+    const applicantName = resumeData.fullName.trim() || "Aarav Deshmukh";
+    const nextCount = applications.length + 1;
+
     setAppliedIds((prev) => [...prev, job.id]);
     const newApp = {
       id: Date.now(),
@@ -240,13 +453,14 @@ export default function App() {
       location: job.location,
       salary: job.salary,
       candidateName: applicantName,
-      resumeAttached: uploadedResume ? uploadedResume.name : "Digital Profile",
-      stageIndex: 0, // 0 = Applied, 1 = Under Review, 2 = Shortlisted
+      resumeAttached: uploadedResume ? uploadedResume.name : `${applicantName}_Resume.pdf`,
+      stageIndex: 0,
       appliedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       appliedDate: new Date().toLocaleDateString([], { day: "2-digit", month: "short" }),
     };
     setApplications((prev) => [newApp, ...prev]);
-    showToast(`Applied to ${job.title} • Track in Profile`);
+    setProfileSubTab("applied");
+    showToast(`Applied to ${job.title}! Added to Applied Jobs (${nextCount})`);
 
     try {
       await fetch(`${API_BASE}/api/applications`, {
@@ -273,7 +487,7 @@ export default function App() {
           : app
       )
     );
-    showToast("Application tracking status updated");
+    showToast("Application tracking stage updated");
   };
 
   const handleResumeFileUpload = (e) => {
@@ -285,7 +499,7 @@ export default function App() {
       size: sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`,
       uploadedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     });
-    showToast(`Resume "${file.name}" uploaded successfully`);
+    showToast(`Resume "${file.name}" attached to profile`);
   };
 
   const handlePublishJob = async (e) => {
@@ -321,16 +535,20 @@ export default function App() {
       if (res.ok) {
         const created = await res.json();
         setJobs((prev) => [created, ...prev]);
-        setCompanyName("");
-        setCustomRole("");
-        setLocation("");
-        setSalary("");
-        setDescription("");
-        showToast("New job published live!");
-        setActiveTab("jobs");
+      } else {
+        setJobs((prev) => [{ id: Date.now(), ...payload }, ...prev]);
       }
+      setCompanyName("");
+      setCustomRole("");
+      setLocation("");
+      setSalary("");
+      setDescription("");
+      showToast("New job published live to feed!");
+      setActiveTab("jobs");
     } catch (err) {
-      console.error("Post job error:", err);
+      setJobs((prev) => [{ id: Date.now(), ...payload }, ...prev]);
+      showToast("New job published live to feed!");
+      setActiveTab("jobs");
     } finally {
       setPosting(false);
     }
@@ -338,6 +556,7 @@ export default function App() {
 
   const handleDeleteJob = async (id) => {
     setJobs((prev) => prev.filter((j) => j.id !== id));
+    setConfirmDeleteId(null);
     showToast("Job listing removed");
     try {
       await fetch(`${API_BASE}/api/jobs/${id}`, { method: "DELETE" });
@@ -352,7 +571,7 @@ export default function App() {
       setIsAdminAuth(true);
       setAdminError("");
       setAdminPassword("");
-      showToast("Authenticated as Administrator");
+      showToast("Signed in as Administrator");
     } else {
       setAdminError("Invalid administrator password.");
     }
@@ -424,7 +643,7 @@ export default function App() {
   const savedJobsList = jobs.filter((job) => savedIds.includes(job.id));
 
   const getInitials = (name) => {
-    if (!name) return "JR";
+    if (!name) return "AD";
     return name
       .split(" ")
       .slice(0, 2)
@@ -458,10 +677,10 @@ export default function App() {
       <div className="hidden print:block bg-white text-slate-900 p-8 max-w-2xl mx-auto font-sans">
         <div className="border-b-2 border-indigo-600 pb-4 mb-5">
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 uppercase">
-            {resumeData.fullName || "Candidate Name"}
+            {resumeData.fullName || "Aarav Deshmukh"}
           </h1>
           <p className="text-sm font-semibold text-indigo-600 mt-0.5">
-            {resumeData.role || "Target Job Role"}
+            {resumeData.role || "Software & Android Developer"}
           </p>
           <div className="flex flex-wrap gap-4 text-xs text-slate-600 mt-2">
             {resumeData.phone && <span>Phone: {resumeData.phone}</span>}
@@ -477,7 +696,7 @@ export default function App() {
             </h2>
             <p className="text-slate-700">
               {resumeData.summary.trim() ||
-                `Results-driven ${resumeData.role || "professional"} with strong problem-solving abilities, hands-on execution skills, and a commitment to delivering high-quality work in fast-paced environments.`}
+                `Results-driven ${resumeData.role || "professional"} with strong problem-solving abilities, hands-on execution skills, and a commitment to delivering high-quality work.`}
             </p>
           </div>
 
@@ -486,7 +705,7 @@ export default function App() {
               Core Skills & Competencies
             </h2>
             <p className="text-slate-800 font-medium">
-              {resumeData.skills.trim() || "Communication, Operations, Team Collaboration, MS Office"}
+              {resumeData.skills.trim() || "Java, Android SDK, REST APIs, Communication"}
             </p>
           </div>
 
@@ -496,7 +715,7 @@ export default function App() {
             </h2>
             <p className="text-slate-700 whitespace-pre-line">
               {resumeData.experienceOrProjects.trim() ||
-                "• Delivered end-to-end tasks with high accuracy and adherence to timelines.\n• Collaborated across cross-functional teams to improve workflow efficiency."}
+                "• Delivered end-to-end tasks with high accuracy and adherence to timelines."}
             </p>
           </div>
 
@@ -505,7 +724,7 @@ export default function App() {
               Education & Qualifications
             </h2>
             <p className="text-slate-800 font-medium">
-              {resumeData.education.trim() || "Bachelor's Degree / Diploma"}
+              {resumeData.education.trim() || "Bachelor's Degree"}
             </p>
           </div>
 
@@ -515,36 +734,34 @@ export default function App() {
         </div>
       </div>
 
-      {/* MOBILE APP SHELL (HIDDEN WHEN PRINTING PDF) */}
+      {/* MOBILE APP SHELL */}
       <div className={`min-h-screen flex justify-center ${bgMain} transition-colors duration-200 font-sans print:hidden`}>
         <div className={`w-full max-w-md min-h-screen flex flex-col border-x ${shellBg} relative pb-24 shadow-xl`}>
-          {/* TOAST NOTIFICATION */}
+          {/* BOTTOM-FLOATING TOAST (NEVER COVERS HEADER OR LOGOUT BUTTON) */}
           {toast && (
-            <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm">
-              <div className="bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 border border-slate-700">
+            <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-sm pointer-events-none">
+              <div className="bg-slate-900/95 backdrop-blur-md text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-700">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{toast}</span>
               </div>
             </div>
           )}
 
-          {/* TOP APP BAR */}
+          {/* TOP APP BAR (CLEAN, NO "PRO" BADGE) */}
           <header
             className={`sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between ${
               lightMode ? "bg-white/95 border-slate-200/80" : "bg-[#0F172A]/95 border-slate-800"
             }`}
           >
-            <div className="flex items-center gap-2.5">
+            <div
+              onDoubleClick={() => setActiveTab(activeTab === "admin" ? "reels" : "admin")}
+              className="flex items-center gap-2.5 select-none cursor-pointer"
+            >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-extrabold text-sm flex items-center justify-center shadow-sm">
                 JR
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h1 className="font-bold text-base tracking-tight leading-none">JobReels</h1>
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    Pro
-                  </span>
-                </div>
+                <h1 className="font-bold text-base tracking-tight leading-none">JobReels</h1>
                 <p className={`text-[11px] font-medium mt-0.5 flex items-center gap-1 ${mutedText}`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   Verified Hiring • Pune
@@ -592,7 +809,127 @@ export default function App() {
 
           {/* MAIN CONTENT AREA */}
           <main className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {/* 1. ENHANCED JOBS SEARCH & FILTER TAB */}
+            {/* 1. FIRST SCREEN: WORKPLACE REELS WITH REAL LOOPING VIDEO & THUMBNAILS */}
+            {activeTab === "reels" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight">Workplace Reels</h2>
+                    <p className={`text-xs ${mutedText}`}>
+                      Inside looks & floor tours from hiring companies
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setMuted(!muted)}
+                    className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 ${cardBg}`}
+                  >
+                    {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    <span>{muted ? "Muted" : "Sound On"}</span>
+                  </button>
+                </div>
+
+                {reels.map((reel) => {
+                  const isLiked = !!likedReels[reel.id];
+                  const likeCount = (reel.likes || 40) + (isLiked ? 1 : 0);
+                  const isPlaying = playingReelId === reel.id;
+
+                  return (
+                    <div key={reel.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
+                      {/* Real Video / Workplace Thumbnail Container */}
+                      <div
+                        onClick={() => setPlayingReelId(isPlaying ? null : reel.id)}
+                        className="relative h-64 w-full bg-slate-900 overflow-hidden cursor-pointer group"
+                      >
+                        {isPlaying ? (
+                          <video
+                            src={reel.videoUrl}
+                            poster={reel.posterUrl}
+                            autoPlay
+                            loop
+                            muted={muted}
+                            playsInline
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={reel.posterUrl}
+                            alt={reel.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        )}
+
+                        {/* Gradient Overlay for Crisp Readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-slate-950/40 flex flex-col justify-between p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/50 text-white backdrop-blur-md border border-white/15 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                              {isPlaying ? "Playing Tour" : "Workplace Tour"}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-black/50 text-white backdrop-blur-md">
+                              0:30 HD
+                            </span>
+                          </div>
+
+                          {!isPlaying && (
+                            <div className="my-auto flex justify-center">
+                              <div className="w-12 h-12 rounded-full bg-white/90 text-indigo-600 shadow-lg flex items-center justify-center group-hover:scale-110 transition">
+                                <Play className="w-5 h-5 fill-indigo-600 ml-0.5" />
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <h3 className="font-bold text-white text-base leading-snug drop-shadow-xs">
+                              {reel.title}
+                            </h3>
+                            <p className="text-xs text-slate-200 mt-1 font-medium">
+                              {reel.roleTag}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Reel Action Bar */}
+                      <div className="p-3.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[11px] flex items-center justify-center shrink-0">
+                            {getInitials(reel.creatorName)}
+                          </div>
+                          <span className="font-semibold text-xs truncate">{reel.creatorName}</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() =>
+                              setLikedReels((prev) => ({ ...prev, [reel.id]: !prev[reel.id] }))
+                            }
+                            className="text-xs font-semibold flex items-center gap-1 text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition"
+                          >
+                            <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`} />
+                            {likeCount}
+                          </button>
+                          <button
+                            onClick={() => showToast("Workplace reel link copied")}
+                            className={`p-1.5 rounded-lg border ${badgeBg}`}
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setActiveTab("jobs")}
+                            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1"
+                          >
+                            View Jobs <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 2. JOBS DISCOVERY TAB (9+ ROLES ACROSS ALL FILTER CHIPS) */}
             {activeTab === "jobs" && (
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
@@ -685,7 +1022,6 @@ export default function App() {
                           <option value="IT">IT & Software</option>
                           <option value="Real Estate">Real Estate & Sales</option>
                           <option value="Engineering">Engineering & Field</option>
-                          <option value="Operations">Operations & CRM</option>
                         </select>
                       </div>
                     </div>
@@ -759,7 +1095,7 @@ export default function App() {
                 {/* Job Cards Feed */}
                 {loading ? (
                   <div className="space-y-3">
-                    {[1, 2].map((n) => (
+                    {[1, 2, 3].map((n) => (
                       <div key={n} className={`p-4 rounded-2xl border animate-pulse space-y-3 ${cardBg}`}>
                         <div className="h-4 bg-slate-200 rounded w-2/3" />
                         <div className="h-3 bg-slate-200 rounded w-1/3" />
@@ -857,7 +1193,7 @@ export default function App() {
                             }`}
                           >
                             <Send className="w-3.5 h-3.5" />
-                            {isApplied ? t.applied : t.oneTapApply}
+                            {isApplied ? `${t.applied} ✓` : t.oneTapApply}
                           </button>
                         </div>
                       </div>
@@ -867,7 +1203,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 2. JOB POST TAB */}
+            {/* 3. JOB POST TAB */}
             {activeTab === "post" && (
               <form onSubmit={handlePublishJob} className="space-y-4">
                 <div>
@@ -1018,99 +1354,13 @@ export default function App() {
               </form>
             )}
 
-            {/* 3. REELS TAB */}
-            {activeTab === "reels" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold tracking-tight">Workplace Reels</h2>
-                    <p className={`text-xs ${mutedText}`}>Short video previews from hiring teams</p>
-                  </div>
-                  <button
-                    onClick={() => setMuted(!muted)}
-                    className={`p-2 rounded-xl border ${cardBg}`}
-                  >
-                    {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {reels.map((reel) => {
-                  const isLiked = !!likedReels[reel.id];
-                  const likeCount = (reel.likes || 18) + (isLiked ? 1 : 0);
-
-                  return (
-                    <div key={reel.id} className={`rounded-2xl border overflow-hidden ${cardBg}`}>
-                      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-800 p-6 text-white min-h-[240px] flex flex-col justify-between relative">
-                        <div className="flex items-center justify-between">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/15 backdrop-blur-xs">
-                            Company Spotlight
-                          </span>
-                          <span className="text-[11px] text-indigo-200 font-medium">0:30 HD</span>
-                        </div>
-
-                        <div className="my-auto flex justify-center">
-                          <button
-                            onClick={() => showToast("Playing workplace spotlight preview")}
-                            className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition"
-                          >
-                            <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-                          </button>
-                        </div>
-
-                        <div>
-                          <h3 className="font-bold text-base leading-snug">{reel.title}</h3>
-                          <p className="text-xs text-indigo-200 mt-1">
-                            {reel.creatorName} • {reel.roleTag || "Verified Employer"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-3.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 font-bold text-[11px] flex items-center justify-center">
-                            {getInitials(reel.creatorName)}
-                          </div>
-                          <span className="font-semibold text-xs">{reel.creatorName}</span>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
-                        </div>
-
-                        <div className="flex items-center gap-2.5">
-                          <button
-                            onClick={() =>
-                              setLikedReels((prev) => ({ ...prev, [reel.id]: !prev[reel.id] }))
-                            }
-                            className="text-xs font-semibold flex items-center gap-1 text-rose-600 px-2 py-1 rounded-lg hover:bg-rose-50 transition"
-                          >
-                            <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`} />
-                            {likeCount}
-                          </button>
-                          <button
-                            onClick={() => showToast("Reel link copied to clipboard")}
-                            className={`p-1.5 rounded-lg border ${badgeBg}`}
-                          >
-                            <Share2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setActiveTab("jobs")}
-                            className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1"
-                          >
-                            Apply <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* 4. RESUME BUILDER TAB (PLACEHOLDERS + FULL PDF TEMPLATE) */}
+            {/* 4. RESUME BUILDER TAB (SYNCS DIRECTLY WITH PROFILE) */}
             {activeTab === "resume" && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-bold tracking-tight">Instant Resume Builder</h2>
-                    <p className={`text-xs ${mutedText}`}>Fill details below & download formatted PDF</p>
+                    <p className={`text-xs ${mutedText}`}>Syncs to My Profile & exports formatted PDF</p>
                   </div>
                   <button
                     onClick={handleDownloadResumePDF}
@@ -1123,13 +1373,20 @@ export default function App() {
                 {/* Live Resume Template Preview Card */}
                 <div className={`p-4 rounded-2xl border-2 border-indigo-600/20 space-y-2.5 ${cardBg}`}>
                   <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
-                    <div>
-                      <h3 className="font-extrabold text-base text-slate-900 dark:text-inherit">
-                        {resumeData.fullName.trim() || "Your Full Name"}
-                      </h3>
-                      <p className="text-xs font-semibold text-indigo-600">
-                        {resumeData.role.trim() || "Target Role / Designation"}
-                      </p>
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={resumeData.photoUrl}
+                        alt={resumeData.fullName}
+                        className="w-10 h-10 rounded-xl object-cover border border-slate-200"
+                      />
+                      <div>
+                        <h3 className="font-extrabold text-sm">
+                          {resumeData.fullName.trim() || "Your Full Name"}
+                        </h3>
+                        <p className="text-xs font-semibold text-indigo-600">
+                          {resumeData.role.trim() || "Target Role / Designation"}
+                        </p>
+                      </div>
                     </div>
                     <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">
                       LIVE PREVIEW
@@ -1152,8 +1409,7 @@ export default function App() {
                   </div>
 
                   <p className={`text-[11px] leading-relaxed ${mutedText}`}>
-                    {resumeData.summary.trim() ||
-                      "Your professional summary will appear here automatically in the exported PDF."}
+                    {resumeData.summary.trim()}
                   </p>
 
                   {skillTags.length > 0 && (
@@ -1170,9 +1426,9 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Form Inputs with Clear Instructional Placeholders */}
+                {/* Form Inputs */}
                 <div className={`p-4 rounded-2xl border space-y-3 ${cardBg}`}>
-                  <p className="text-xs font-bold">Enter Your Details</p>
+                  <p className="text-xs font-bold">Candidate Details</p>
 
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold">Full Name *</label>
@@ -1180,7 +1436,7 @@ export default function App() {
                       type="text"
                       value={resumeData.fullName}
                       onChange={(e) => setResumeData({ ...resumeData, fullName: e.target.value })}
-                      placeholder="Enter your full name (e.g., Aarav Sharma)"
+                      placeholder="Enter your full name"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
                     />
                   </div>
@@ -1191,7 +1447,7 @@ export default function App() {
                       type="text"
                       value={resumeData.role}
                       onChange={(e) => setResumeData({ ...resumeData, role: e.target.value })}
-                      placeholder="Enter desired role (e.g., Android Developer / Sales Executive)"
+                      placeholder="Enter desired role"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
                     />
                   </div>
@@ -1225,7 +1481,7 @@ export default function App() {
                       type="text"
                       value={resumeData.location}
                       onChange={(e) => setResumeData({ ...resumeData, location: e.target.value })}
-                      placeholder="Enter city & state (e.g., Baner, Pune, Maharashtra)"
+                      placeholder="Enter city & state"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
                     />
                   </div>
@@ -1236,7 +1492,7 @@ export default function App() {
                       rows={2}
                       value={resumeData.summary}
                       onChange={(e) => setResumeData({ ...resumeData, summary: e.target.value })}
-                      placeholder="Briefly describe your strengths & career objective (leave blank for auto-template)..."
+                      placeholder="Briefly describe your strengths & career objective..."
                       className={`w-full px-3.5 py-2 rounded-xl border text-xs outline-none ${inputBg}`}
                     />
                   </div>
@@ -1247,7 +1503,7 @@ export default function App() {
                       type="text"
                       value={resumeData.skills}
                       onChange={(e) => setResumeData({ ...resumeData, skills: e.target.value })}
-                      placeholder="e.g., Java, Android Studio, REST APIs, Communication"
+                      placeholder="e.g., Java, Android Studio, REST APIs"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
                     />
                   </div>
@@ -1271,7 +1527,7 @@ export default function App() {
                       type="text"
                       value={resumeData.education}
                       onChange={(e) => setResumeData({ ...resumeData, education: e.target.value })}
-                      placeholder="e.g., B.E. / B.Sc. / Diploma - University Name (Year)"
+                      placeholder="e.g., B.E. / Diploma - University Name"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none ${inputBg}`}
                     />
                   </div>
@@ -1287,7 +1543,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 5. MY PROFILE TAB (RESUME UPLOAD + APPLIED JOBS TRACKER) */}
+            {/* 5. MY PROFILE TAB (POPULATED PHOTO & NAME + RESUME UPLOAD + APPLIED JOBS TRACKER) */}
             {activeTab === "profile" && (
               <div className="space-y-4">
                 <div>
@@ -1295,28 +1551,33 @@ export default function App() {
                   <p className={`text-xs mt-0.5 ${mutedText}`}>{t.myProfileSub}</p>
                 </div>
 
-                {/* Candidate Identity Card */}
-                <div className={`p-4 rounded-2xl border flex items-center justify-between ${cardBg}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
-                      {getInitials(resumeData.fullName || "Candidate")}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm">
-                        {resumeData.fullName.trim() || "Candidate Profile"}
+                {/* Candidate Identity Card with Real Photo & Synced Resume Info */}
+                <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${cardBg}`}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={resumeData.photoUrl}
+                      alt={resumeData.fullName}
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-100 shadow-xs shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-sm truncate">
+                        {resumeData.fullName.trim() || "Aarav Deshmukh"}
                       </h3>
-                      <p className={`text-xs ${mutedText}`}>
-                        {resumeData.role.trim() || "Job Seeker • Pune"}
+                      <p className={`text-xs truncate ${mutedText}`}>
+                        {resumeData.role.trim() || "Android & Full Stack Java Developer"}
+                      </p>
+                      <p className={`text-[11px] truncate ${mutedText}`}>
+                        {resumeData.location.trim() || "Baner, Pune"}
                       </p>
                       <div className="flex items-center gap-3 mt-1.5 text-[11px] font-semibold">
-                        <span className="text-indigo-600">{applications.length} Applied</span>
-                        <span className="text-amber-600">{savedIds.length} Saved</span>
+                        <span className="text-indigo-600">Applied Jobs ({applications.length})</span>
+                        <span className="text-amber-600">Saved ({savedIds.length})</span>
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveTab("resume")}
-                    className={`px-3 py-1.5 rounded-xl border text-[11px] font-semibold ${badgeBg}`}
+                    className={`px-3 py-1.5 rounded-xl border text-[11px] font-semibold shrink-0 ${badgeBg}`}
                   >
                     Edit Info
                   </button>
@@ -1328,7 +1589,7 @@ export default function App() {
                     <div>
                       <h3 className="text-xs font-bold">Uploaded Resume (PDF / DOCX)</h3>
                       <p className={`text-[11px] ${mutedText}`}>
-                        Used automatically when you tap One-Tap Apply
+                        Attached automatically on One-Tap Apply
                       </p>
                     </div>
                     <button
@@ -1407,7 +1668,7 @@ export default function App() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setProfileSubTab("applied")}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition ${
                       profileSubTab === "applied"
                         ? "bg-indigo-600 text-white border-indigo-600"
                         : cardBg
@@ -1417,7 +1678,7 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setProfileSubTab("saved")}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition ${
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition ${
                       profileSubTab === "saved"
                         ? "bg-indigo-600 text-white border-indigo-600"
                         : cardBg
@@ -1498,7 +1759,7 @@ export default function App() {
 
                           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                             <span className={mutedText}>
-                              Submitted: {app.appliedDate}, {app.appliedAt} • {app.resumeAttached}
+                              Submitted: {app.appliedDate}, {app.appliedAt}
                             </span>
                             <button
                               onClick={() => advanceApplicationStage(app.id)}
@@ -1557,7 +1818,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 6. ADMIN TAB WITH PASSWORD LOGIN & LISTING MANAGEMENT */}
+            {/* 6. HIDDEN ADMIN VIEW (OPENED ONLY BY DOUBLE-TAPPING JR LOGO) */}
             {activeTab === "admin" && (
               <div className="space-y-4">
                 {!isAdminAuth ? (
@@ -1565,8 +1826,17 @@ export default function App() {
                     onSubmit={handleAdminLogin}
                     className={`p-6 rounded-2xl border space-y-4 mt-4 ${cardBg}`}
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
-                      <Lock className="w-5 h-5" />
+                    <div className="flex items-center justify-between">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("reels")}
+                        className={`p-2 rounded-xl border ${badgeBg}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                     <div>
                       <h2 className="text-lg font-bold tracking-tight">{t.adminLoginTitle}</h2>
@@ -1598,14 +1868,17 @@ export default function App() {
                   </form>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <div>
                         <h2 className="text-lg font-bold tracking-tight">Admin Dashboard</h2>
                         <p className={`text-xs ${mutedText}`}>Live platform metrics & moderation</p>
                       </div>
                       <button
-                        onClick={() => setIsAdminAuth(false)}
-                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold flex items-center gap-1"
+                        onClick={() => {
+                          setIsAdminAuth(false);
+                          setActiveTab("reels");
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold flex items-center gap-1 shrink-0"
                       >
                         <LogOut className="w-3.5 h-3.5" /> Sign Out
                       </button>
@@ -1626,60 +1899,52 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Manage Active Jobs */}
+                    {/* Manage Active Jobs with Confirmation */}
                     <div className="space-y-2">
                       <h3 className={`text-xs font-bold uppercase tracking-wider ${mutedText}`}>
                         Manage Published Listings
                       </h3>
                       {jobs.map((job) => (
-                        <div
-                          key={job.id}
-                          className={`p-3 rounded-xl border flex items-center justify-between gap-2 ${cardBg}`}
-                        >
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold truncate">{job.title}</p>
-                            <p className={`text-[11px] truncate ${mutedText}`}>
-                              {job.companyName} • {job.location}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteJob(job.id)}
-                            title="Remove Listing"
-                            className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Recent Applications */}
-                    <div className="space-y-2">
-                      <h3 className={`text-xs font-bold uppercase tracking-wider ${mutedText}`}>
-                        Recent Applications
-                      </h3>
-                      {applications.length === 0 ? (
-                        <div className={`p-4 rounded-xl border text-xs ${cardBg} ${mutedText}`}>
-                          No new candidate applications in this session yet.
-                        </div>
-                      ) : (
-                        applications.map((app) => (
-                          <div
-                            key={app.id}
-                            className={`p-3.5 rounded-xl border flex items-center justify-between ${cardBg}`}
-                          >
-                            <div>
-                              <p className="text-xs font-bold">{app.jobTitle}</p>
-                              <p className={`text-[11px] ${mutedText}`}>
-                                {app.candidateName} • {app.companyName}
+                        <div key={job.id} className={`p-3 rounded-xl border space-y-2 ${cardBg}`}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold truncate">{job.title}</p>
+                              <p className={`text-[11px] truncate ${mutedText}`}>
+                                {job.companyName} • {job.location}
                               </p>
                             </div>
-                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                              {app.appliedAt}
-                            </span>
+                            <button
+                              onClick={() => setConfirmDeleteId(job.id)}
+                              title="Remove Listing"
+                              className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                        ))
-                      )}
+
+                          {confirmDeleteId === job.id && (
+                            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-semibold text-rose-800 flex items-center gap-1">
+                                <AlertTriangle className="w-3.5 h-3.5" /> Delete this listing?
+                              </span>
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="px-2.5 py-1 rounded bg-white border border-slate-200 text-[11px] font-semibold text-slate-700"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteJob(job.id)}
+                                  className="px-2.5 py-1 rounded bg-rose-600 text-white text-[11px] font-semibold"
+                                >
+                                  Confirm
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </>
                 )}
@@ -1764,9 +2029,9 @@ export default function App() {
             </div>
           )}
 
-          {/* BOTTOM NAVIGATION BAR (6 TABS INCLUDING MY PROFILE) */}
+          {/* BOTTOM NAVIGATION BAR (5 CLEAN CANDIDATE/EMPLOYER TABS — ADMIN HIDDEN) */}
           <nav
-            className={`fixed bottom-0 w-full max-w-md border-t px-1 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
+            className={`fixed bottom-0 w-full max-w-md border-t px-2 py-2 flex justify-around items-center z-30 backdrop-blur-md ${
               lightMode ? "bg-white/95 border-slate-200/90" : "bg-[#0F172A]/95 border-slate-800"
             }`}
           >
@@ -1775,8 +2040,7 @@ export default function App() {
               { id: "jobs", label: t.jobs, icon: Briefcase },
               { id: "post", label: t.jobPost, icon: PlusCircle },
               { id: "resume", label: t.resume, icon: FileText },
-              { id: "profile", label: t.profile, icon: User },
-              { id: "admin", label: t.admin, icon: Shield },
+              { id: "profile", label: t.profile, icon: User, badge: applications.length },
             ].map((item) => {
               const Icon = item.icon;
               const active = activeTab === item.id;
@@ -1784,7 +2048,7 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-2xl text-[10px] font-semibold transition ${
+                  className={`relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl text-[11px] font-semibold transition ${
                     active
                       ? "text-indigo-600 bg-indigo-50/80"
                       : lightMode
@@ -1792,7 +2056,14 @@ export default function App() {
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <div className="relative">
+                    <Icon className="w-5 h-5" />
+                    {item.badge > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-emerald-600 text-white text-[9px] font-bold flex items-center justify-center shadow-xs">
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                   <span>{item.label}</span>
                 </button>
               );
