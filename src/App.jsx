@@ -1362,12 +1362,7 @@ export default function App() {
                     <h2 className="text-lg font-bold tracking-tight">Instant Resume Builder</h2>
                     <p className={`text-xs ${mutedText}`}>Syncs to My Profile & exports formatted PDF</p>
                   </div>
-                  <button
-                    onClick={handleDownloadResumePDF}
-                    className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download PDF
-                  </button>
+                 
                 </div>
 
                 {/* Live Resume Template Preview Card */}
